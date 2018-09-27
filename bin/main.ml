@@ -1,0 +1,2 @@
+let () =
+  Display.write ()

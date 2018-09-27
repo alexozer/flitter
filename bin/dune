@@ -1,0 +1,7 @@
+(executables
+ (names main)
+ (libraries flitter))
+
+(install
+ (section bin)
+ (files (main.exe as flitter)))

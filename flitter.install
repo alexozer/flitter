@@ -1,0 +1,7 @@
+lib: [
+  "_build/install/default/lib/flitter/META" {"META"}
+  "_build/install/default/lib/flitter/opam" {"opam"}
+]
+bin: [
+  "_build/install/default/bin/flitter" {"flitter"}
+]

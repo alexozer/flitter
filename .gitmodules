@@ -1,0 +1,3 @@
+[submodule "lib/notty"]
+	path = lib/notty
+	url = https://github.com/alexozer/notty
