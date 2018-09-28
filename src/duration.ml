@@ -51,40 +51,39 @@ let of_string str =
 
 let to_string duration decimals =
   let days = duration / day in
-  let duration = duration % day in
+  let duration_day = duration % day in
 
-  let hours = duration / hour in
-  let duration = duration % hour in
+  let hours = duration_day / hour in
+  let duration_hour = duration_day % hour in
 
-  let minutes = duration / minute in
-  let duration = duration % minute in
+  let minutes = duration_hour / minute in
+  let duration_minute = duration_hour % minute in
 
-  let seconds = duration / second in
-  let duration = duration % second in
+  let seconds = duration_minute / second in
+  let millis = duration_minute % second in
 
-  let millis = duration in
-
-  let millis_str = left_pad_zeros decimals (Int.to_string millis) in
+  let millis_str = 
+    let zero_padded = left_pad_zeros 3 (Int.to_string millis) in
+    String.prefix zero_padded decimals
+  in
   let seconds_str = 
     let str = Int.to_string seconds in
-    if minutes > 0 then left_pad_zeros 2 str else str
+    if duration >= minute then left_pad_zeros 2 str else str
   in
 
   let minutes_str =
-    if minutes = 0 then "" else (
-      let str = Int.to_string minutes in
-      if String.length str < 2 && hours > 0 then "0" ^ str else str
-    ) ^ ":"
+    if duration >= hour
+    then (Int.to_string minutes |> left_pad_zeros 2) ^ ":"
+    else if duration >= minute then Int.to_string minutes ^ ":" else ""
   in
 
   let hours_str =
-    if hours = 0 then "" else (
-      let str = Int.to_string hours in
-      if String.length str < 2 && days > 0 then "0" ^ str else str
-    ) ^ ":"
+    if duration >= day
+    then (Int.to_string hours |> left_pad_zeros 2) ^ ":"
+    else if duration >= hour then Int.to_string hours ^ ":" else ""
   in
 
-  let days_str = if days > 0 then Int.to_string days ^ ":" else "" in
+  let days_str = if duration >= day then Int.to_string days ^ ":" else "" in
 
   String.concat [
     days_str; 
