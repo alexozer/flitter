@@ -1,4 +1,4 @@
 (library
   (name flitter)
   (wrapped false)
-  (libraries base notty notty.unix))
+  (libraries base notty notty.unix re))
