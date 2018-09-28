@@ -10,7 +10,7 @@ let day : t = hour * 60
 
 let compiled_re =
   let re_str = {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|} in
-  Re.str re_str |> Re.compile
+  Re.Perl.re re_str |> Re.compile
 
 let left_pad_zeros_char_list str size =
   let rec prepend char_list n =
@@ -18,11 +18,11 @@ let left_pad_zeros_char_list str size =
   in
   prepend (String.to_list str) (size - String.length str)
 
-let left_pad_zeros str size =
+let left_pad_zeros size str =
   left_pad_zeros_char_list str size
   |> String.of_char_list
 
-let right_pad_zeros str size =
+let right_pad_zeros size str =
   left_pad_zeros_char_list str size
   |> List.rev
   |> String.of_char_list
@@ -30,26 +30,23 @@ let right_pad_zeros str size =
 let of_string str =
   match Re.exec_opt compiled_re str with
   | None -> None
-  | Some groups -> (
-      let time_strs = Re.Group.all groups in
+  | Some groups ->
+    let group_strs = Re.Group.all groups in
 
-      let to_int_default x = if String.length x = 0 then 0 else Int.of_string x in
-      let time_ints = List.map (Array.to_list time_strs) ~f:to_int_default in
+    let to_int_default x = if String.length x = 0 then 0 else Int.of_string x in
 
-      match time_ints with
-      | days :: hours :: minutes :: seconds :: _ :: [] -> (
-          let parsed_millis_str = Array.get time_strs 4 in
-          let millis = right_pad_zeros parsed_millis_str 3 |> Int.of_string in
+    let days = Array.get group_strs 1 |> to_int_default in
+    let hours = Array.get group_strs 2 |> to_int_default in
+    let minutes = Array.get group_strs 3 |> to_int_default in
+    let seconds = Array.get group_strs 4 |> to_int_default in
+    let millis = Array.get group_strs 5 |> right_pad_zeros 3 |> to_int_default in
 
-          Some (
-            day * days +
-            hour * hours +
-            minute * minutes +
-            second * seconds +
-            milli * millis
-          )
-        )
-      | _ -> None
+    Some (
+      day * days +
+      hour * hours +
+      minute * minutes +
+      second * seconds +
+      milli * millis
     )
 
 let to_string duration decimals =
@@ -67,8 +64,11 @@ let to_string duration decimals =
 
   let millis = duration in
 
-  let millis_str = left_pad_zeros (Int.to_string millis) decimals in
-  let seconds_str = left_pad_zeros (Int.to_string seconds) 2 in
+  let millis_str = left_pad_zeros decimals (Int.to_string millis) in
+  let seconds_str = 
+    let str = Int.to_string seconds in
+    if minutes > 0 then left_pad_zeros 2 str else str
+  in
 
   let minutes_str =
     if minutes = 0 then "" else (
@@ -86,4 +86,11 @@ let to_string duration decimals =
 
   let days_str = if days > 0 then Int.to_string days ^ ":" else "" in
 
-  String.concat [days_str; hours_str; minutes_str; seconds_str; millis_str]
+  String.concat [
+    days_str; 
+    hours_str;
+    minutes_str; 
+    seconds_str;
+    ".";
+    millis_str;
+  ]

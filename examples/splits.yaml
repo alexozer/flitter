@@ -1,51 +1,50 @@
 game: 'Super Monkey Ball 2: Monkeyed Ball'
 category: Story Mode All Levels
 total attempts: 3000
-total completed: 40
+completed runs: 40
 
 personal best:
   attempt: 3000
   splits:
+    - title: Green
+      time: '2:11'
+      is gold split: false
 
-  - title: Green
-    time: '2:11'
-    is gold split: false
+    - title: Apricot
+      time: '4:31.000'
+      is gold split: false
 
-  - title: Apricot
-    time: '4:31.000'
-    is gold split: false
+    - title: Blue
+      time: '6:35'
+      is gold split: false
 
-  - title: Blue
-    time: '6:35'
-    is gold split: false
+    - title: Brown
+      time: '0:8:48.00'
+      is gold split: false
 
-  - title: Brown
-    time: '0:8:48.00'
-    is gold split: false
+    - title: Pink
+      time: '11:03'
+      is gold split: true
 
-  - title: Pink
-    time: '11:03'
-    is gold split: true
+    - title: White
+      time: '13:46'
+      is gold split: false
 
-  - title: White
-    time: '13:46'
-    is gold split: false
+    - title: Teal
+      time: '16:51'
+      is gold split: false
 
-  - title: Teal
-    time: '16:51'
-    is gold split: false
+    - title: Orange
+      time: '19:21'
+      is gold split: false
 
-  - title: Orange
-    time: '19:21'
-    is gold split: false
+    - title: Gold
+      time: '21:41'
+      is gold split: true
 
-  - title: Gold
-    time: '21:41'
-    is gold split: true
-
-  - title: Black
-    time: '26:16'
-    is gold split: true
+    - title: Black
+      time: '26:16'
+      is gold split: true
 
 gold segments:
   - title: Green
@@ -79,88 +78,86 @@ gold segments:
     duration: '4:35'
 
 run history:
-- attempt: 2999
-  splits:
+  - attempt: 2999
+    splits:
+      - title: Green
+        time: '2:11'
+        is gold split: false
 
-  - title: Green
-    time: '2:11'
-    is gold split: false
+      - title: Apricot
+        time: '4:31.000'
+        is gold split: false
 
-  - title: Apricot
-    time: '4:31.000'
-    is gold split: false
+      - title: Blue
+        time: '6:35'
+        is gold split: false
 
-  - title: Blue
-    time: '6:35'
-    is gold split: false
+      - title: Brown
+        time: '0:8:48.00'
+        is gold split: false
 
-  - title: Brown
-    time: '0:8:48.00'
-    is gold split: false
+      - title: Pink
+        time: '11:03'
+        is gold split: true
 
-  - title: Pink
-    time: '11:03'
-    is gold split: true
+      - title: White
+        time: '13:46'
+        is gold split: false
 
-  - title: White
-    time: '13:46'
-    is gold split: false
+      - title: Teal
+        time: '16:51'
+        is gold split: false
 
-  - title: Teal
-    time: '16:51'
-    is gold split: false
+      - title: Orange
+        time: '19:21'
+        is gold split: false
 
-  - title: Orange
-    time: '19:21'
-    is gold split: false
+      - title: Gold
+        time: '21:41'
+        is gold split: true
 
-  - title: Gold
-    time: '21:41'
-    is gold split: true
+      - title: Black
+        time: '26:16'
+        is gold split: true
 
-  - title: Black
-    time: '26:16'
-    is gold split: true
+  - attempt: 2998
+    splits:
+      - title: Green
+        time: '2:11'
+        is gold split: false
 
-- attempt: 2998
-  splits:
+      - title: Apricot
+        time: '4:31.000'
+        is gold split: false
 
-  - title: Green
-    time: '2:11'
-    is gold split: false
+      - title: Blue
+        time: '6:35'
+        is gold split: false
 
-  - title: Apricot
-    time: '4:31.000'
-    is gold split: false
+      - title: Brown
+        time: '0:8:48.00'
+        is gold split: false
 
-  - title: Blue
-    time: '6:35'
-    is gold split: false
+      - title: Pink
+        time: '11:03'
+        is gold split: true
 
-  - title: Brown
-    time: '0:8:48.00'
-    is gold split: false
+      - title: White
+        time: '13:46'
+        is gold split: false
 
-  - title: Pink
-    time: '11:03'
-    is gold split: true
+      - title: Teal
+        time: '16:51'
+        is gold split: false
 
-  - title: White
-    time: '13:46'
-    is gold split: false
+      - title: Orange
+        time: '19:21'
+        is gold split: false
 
-  - title: Teal
-    time: '16:51'
-    is gold split: false
+      - title: Gold
+        time: '21:41'
+        is gold split: true
 
-  - title: Orange
-    time: '19:21'
-    is gold split: false
-
-  - title: Gold
-    time: '21:41'
-    is gold split: true
-
-  - title: Black
-    time: '26:16'
-    is gold split: true
+      - title: Black
+        time: '26:16'
+        is gold split: true

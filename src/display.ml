@@ -1,5 +1,6 @@
 open Notty
 open Base
+open Splits
 
 let time_col_width = 10
 
@@ -65,10 +66,15 @@ let center_pad width i =
     let rpad = pad - lpad in
     I.hpad lpad rpad i
 
-let preamble width =
+let join_pad width left right =
+  let center_size = width - I.width left - I.width right in
+  let padded_right = I.hpad center_size 0 right in
+  I.(left <|> padded_right)
+
+let preamble run width =
   let center = center_pad width in
-  let title = I.string A.empty "Super Monkey Ball 2: Monkeyed Ball" |> center in
-  let category = I.string A.empty "Story Mode All Levels" |> center in
+  let title = I.string A.empty run.game_info.game |> center in
+  let category = I.string A.empty run.game_info.category |> center in
 
   I.(title <-> category)
 
@@ -84,25 +90,44 @@ let splits_header width =
 
   I.(padded <-> br)
 
-let splits _ = I.empty
+let big_timer run width =
+  let time = 
+    (Unix.gettimeofday () -. run.start_time) *. 1000.
+    |> Int.of_float in
 
-let big_timer width =
-  left_pad width (big_font_image "0.00")
+  Duration.to_string time 2
+  |> big_font_image
+  |> left_pad width
 
-let post_info _ = I.empty
+let sob run width =
+  let sob = Array.fold run.golds ~init:0 ~f:(fun sum g2 -> sum + g2.duration) in
+  let sob_desc = I.string A.empty "Sum of Best Segments" in
+  let sob_time = I.string A.empty (Duration.to_string sob 2) in
+  join_pad width sob_desc sob_time
 
-let timer width =
+let post_info run width =
+  sob run width
+
+let display run width =
   let width_ = width in
 
   I.(
-    preamble width_ <->
+    preamble run width_ <->
     void width_ 1 <->
     splits_header width_ <->
-    splits width_ <->
-    big_timer width_ <->
+    (* splits run width_ <-> *)
+    big_timer run width_ <->
     void width_ 1 <->
-    post_info width_
+    post_info run width_
   )
 
-let write () =
-  timer 40 |> Notty_unix.output_image
+type t = Notty_unix.Term.t
+
+let make () =
+  Notty_unix.Term.create ()
+
+let draw term run =
+  let open Notty_unix in
+  let width, _ = Term.size term in
+  let image = display run width in
+  Term.image term image
