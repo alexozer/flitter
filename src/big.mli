@@ -1,1 +1,1 @@
-val image_of_string : string -> Notty.I.t
+val image_of_string : Notty.A.t -> string -> Notty.I.t

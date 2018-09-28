@@ -5,3 +5,6 @@ lib: [
 bin: [
   "_build/install/default/bin/flitter" {"flitter"}
 ]
+doc: [
+  "_build/install/default/doc/flitter/README.md"
+]

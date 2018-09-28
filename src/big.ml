@@ -26,14 +26,13 @@ let big_font_map =
   let extract_char_at start_idx =
     let ch = String.get fst_line start_idx in
     let end_idx = (String.rindex_exn fst_line ch) + 1 in
-    let char_image = List.map (List.tl_exn font) ~f:(fun line ->
+    let char_rows = List.map (List.tl_exn font) ~f:(fun line ->
         let row_str = String.(drop_prefix (prefix line end_idx) start_idx) in
         let row_list = String.to_list row_str in
-        let unicode_array = Array.of_list_map row_list ~f:uchar_of_char in
-        I.uchars A.empty unicode_array
-      ) |> I.vcat in
+        Array.of_list_map row_list ~f:uchar_of_char
+      ) in
 
-    (char_image, end_idx)
+    (char_rows, end_idx)
   in
 
   let rec map_chars_at map idx =
@@ -45,7 +44,8 @@ let big_font_map =
 
   map_chars_at (Map.empty (module Char)) 0
 
-let image_of_string str =
-  let char_list = String.to_list str in
-  let char_images = List.map char_list ~f:(fun ch -> Map.find_exn big_font_map ch) in
-  I.hcat char_images
+let image_of_string attr str =
+  List.map (String.to_list str) ~f:(fun ch ->
+      List.map (Map.find_exn big_font_map ch) ~f:(I.uchars attr)
+      |> I.vcat
+    ) |> I.hcat

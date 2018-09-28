@@ -2,6 +2,33 @@ open Base
 open Notty
 open Splits
 
+module Color = struct
+  let of_string str =
+    match String.to_list str with
+    | '#' :: r1 :: r2 :: g1 :: g2 :: b1 :: b2 :: [] ->
+      let compon_of_hex_digits left right = 
+        ['0'; 'x'; left; right] |> String.of_char_list |> Int.of_string in
+      let r = compon_of_hex_digits r1 r2 in
+      let g = compon_of_hex_digits g1 g2 in
+      let b = compon_of_hex_digits b1 b2 in
+
+      A.rgb_888 ~r:r ~g:g ~b:b
+
+    | _ -> failwith "Failed to convert color"
+
+  (* https://flatuicolors.com/palette/cn *)
+  let ahead_gain = of_string "#2ed573"
+  (* let ahead_loss = of_string "#7bed9f"
+     let behind_gain = of_string "#ff6b81"
+     let behind_loss = of_string "#ff4757"
+     let gold = of_string "#ffa502"
+     let idle = of_string "#1e90ff"
+     let label = of_string "#a4b0be"
+     let selection = of_string "#57606f"
+     let fg = of_string "#f1f2f6" *)
+  let bg = of_string "#2f3542"
+end
+
 let time_col_width = 10
 
 let left_pad width i =
@@ -47,7 +74,7 @@ let big_timer run width =
     |> Int.of_float in
 
   Duration.to_string time 2
-  |> Big.image_of_string
+  |> Big.image_of_string A.(fg Color.ahead_gain ++ bg Color.bg)
   |> left_pad width
 
 let sob run width =
