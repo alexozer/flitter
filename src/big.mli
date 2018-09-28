@@ -1,0 +1,1 @@
+val image_of_string : string -> Notty.I.t
