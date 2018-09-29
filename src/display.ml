@@ -24,7 +24,7 @@ let join_pad width left right =
 
 let preamble run width =
   let center = center_pad width in
-  let bold_color = A.(Color.text ++ st bold) in
+  let bold_color = A.(Colors.text ++ st bold) in
   let title = I.string bold_color run.game.title |> center in
   let category = I.string bold_color run.game.category |> center in
 
@@ -33,12 +33,12 @@ let preamble run width =
 let splits_header width =
   let labels = ["Delta"; "Sgmt"; "Time"] in
 
-  let colored = List.map ~f:(I.string Color.label) labels in
+  let colored = List.map ~f:(I.string Colors.label) labels in
   let cell_padded = List.map ~f:(left_pad time_col_width) colored in
   let joined = I.hcat cell_padded in
   let padded = left_pad width joined in
 
-  let br = I.uchar Color.label (Caml.Uchar.of_int 0x2500) width 1 in
+  let br = I.uchar Colors.label (Caml.Uchar.of_int 0x2500) width 1 in
 
   I.(padded <-> br)
 
@@ -55,41 +55,6 @@ let rec ahead_by run split_num =
         | None -> ahead_by run (split_num - 1)
         | Some time -> Some (time - comp_times.(split_num))
 
-let is_gold run split_num =
-  if split_num = run.curr_split then false else
-    match run.game.golds with
-    | None -> false
-    | Some golds -> (
-        match run.splits.(split_num), run.splits.(split_num - 1) with
-        | Some t1, Some t2 -> t1 - t2 < golds.(split_num)
-        | _ -> false
-      )
-
-let time_color run split_num =
-  (* 
-  If this isn't the current split, check if segment is a gold
-  else
-    Find current time
-    Find amount we're ahead/behind by
-    Find time ahead/behind by in last split possible
-    If this isn't available
-      Color is either ahead gain or behind loss
-    else
-      color depends on whether currently ahead and how lead/loss compares to last available lead/loss
-  *)
-
-  if is_gold run split_num then Color.gold else
-    match ahead_by run split_num with
-    | None -> Color.ahead_gain
-    | Some delta ->
-      match ahead_by run (split_num - 1) with
-      | None -> (if delta < 0 then Color.ahead_gain else Color.behind_loss)
-      | Some prev_delta -> (
-          if delta < 0 
-          then if delta < prev_delta then Color.ahead_gain else Color.ahead_loss
-          else if delta > prev_delta then Color.behind_loss else Color.behind_gain
-        )
-
 let segment_time run split_num =
   if split_num > run.curr_split then None else
 
@@ -105,15 +70,50 @@ let segment_time run split_num =
     | Some t1, Some t2 -> Some (t1 - t2)
     | _ -> None
 
+let is_gold run split_num =
+  if split_num >= run.curr_split then false else
+    match run.game.golds with
+    | None -> false
+    | Some golds -> (
+        match segment_time run split_num with 
+        | Some seg_time -> seg_time < golds.(split_num)
+        | None -> false
+      )
+
+let time_color run split_num =
+  (* 
+  If this isn't the current split, check if segment is a gold
+  else
+    Find current time
+    Find amount we're ahead/behind by
+    Find time ahead/behind by in last split possible
+    If this isn't available
+      Colors.is either ahead gain or behind loss
+    else
+      color depends on whether currently ahead and how lead/loss compares to last available lead/loss
+  *)
+
+  if is_gold run split_num then Colors.rainbow () else
+    match ahead_by run split_num with
+    | None -> Colors.ahead_gain
+    | Some delta ->
+      match ahead_by run (split_num - 1) with
+      | None -> (if delta < 0 then Colors.ahead_gain else Colors.behind_loss)
+      | Some prev_delta -> (
+          if delta < 0 
+          then if delta < prev_delta then Colors.ahead_gain else Colors.ahead_loss
+          else if delta > prev_delta then Colors.behind_loss else Colors.behind_gain
+        )
+
 let split_row run width i =
-  let title = I.string Color.text run.game.split_names.(i) in
+  let title = I.string Colors.text run.game.split_names.(i) in
   let time_cols =
-    if i > run.curr_split then I.char Color.bg ' ' (time_col_width * 3) 1
+    if i > run.curr_split then I.char Colors.bg ' ' (time_col_width * 3) 1
 
     else
       let delta_image =
         match ahead_by run i with
-        | None -> I.string Color.text "-"
+        | None -> I.string Colors.text "-"
         | Some delta -> 
           let time_str = Duration.to_string delta 1 in
           let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
@@ -122,8 +122,8 @@ let split_row run width i =
 
       let sgmt_image =
         match segment_time run i with
-        | None -> I.string Color.text "-"
-        | Some sgmt -> I.string Color.text (Duration.to_string sgmt 1)
+        | None -> I.string Colors.text "-"
+        | Some sgmt -> I.string Colors.text (Duration.to_string sgmt 1)
       in
 
       let time_str =
@@ -134,7 +134,7 @@ let split_row run width i =
           | Some time -> Duration.to_string time 1
           | None -> if i < run.curr_split then "-" else ""
       in
-      let time_image = I.string Color.text time_str in
+      let time_image = I.string Colors.text time_str in
 
       List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
       |> I.hcat
@@ -148,7 +148,7 @@ let splits run width =
 
 let big_timer run width =
   let time, color = match run.state with
-    | Idle -> 0, Color.idle
+    | Idle -> 0, Colors.idle
 
     | Timing -> Duration.since run.start_time, time_color run run.curr_split
 
@@ -157,7 +157,7 @@ let big_timer run width =
       let color = time_color run run.curr_split in
       time, color
 
-    | Done -> 0, Color.ahead_gain
+    | Done -> 0, Colors.ahead_gain
   in
 
   Duration.to_string time 2
@@ -168,11 +168,11 @@ let sob run width =
   let sob_time = match run.game.golds with
     | Some golds ->
       let sob = Array.reduce_exn golds ~f:(+) in
-      I.string Color.text (Duration.to_string sob 2)
+      I.string Colors.text (Duration.to_string sob 2)
     | None -> I.empty
   in
 
-  let sob_desc = I.string Color.text "Sum of Best Segments" in
+  let sob_desc = I.string Colors.text "Sum of Best Segments" in
   join_pad width sob_desc sob_time
 
 let post_info run width =
@@ -188,7 +188,7 @@ let display run (w, h) =
       void w 1 <->
       big_timer run w <->
       post_info run w
-    ) </> I.char Color.bg ' ' w h
+    ) </> I.char Colors.bg ' ' w h
   )
 
 type t = Notty_unix.Term.t

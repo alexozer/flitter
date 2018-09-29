@@ -20,22 +20,22 @@ let () =
       |];
 
       golds = Some [|
-          3000;
-          3000;
-          3000;
+          2000;
+          2000;
+          2000;
         |];
     };
 
     comparison = Some [|
-        4000;
-        6000;
-        8500;
+        3000;
+        5000;
+        8000;
       |];
 
     start_time = Unix.gettimeofday ();
     state = Timing;
-    splits = Array.make 3 None;
-    curr_split = 1;
+    splits = Array.of_list [Some 1500; None; None];
+    curr_split = 2;
   } in
 
   let rec refresh disp =
