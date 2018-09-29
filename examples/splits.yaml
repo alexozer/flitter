@@ -3,6 +3,18 @@ category: Story Mode All Levels
 total attempts: 3000
 completed runs: 40
 
+split_names:
+  - Green
+  - Apricot
+  - Blue
+  - Brown
+  - Pink
+  - White
+  - Teal
+  - Orange
+  - Gold
+  - Black
+
 personal best:
   attempt: 3000
   splits:

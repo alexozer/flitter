@@ -1,38 +1,21 @@
 type game_info = {
-  game : string;
+  title : string;
   category : string;
   attempts : int;
   completed_runs : int;
+
+  split_names : string array;
+  golds : Duration.t array option;
 }
 
-type split_segment = {
-  title : string;
-  time : Duration.t;
-  is_gold_split : bool;
-}
-
-type splits = split_segment array
-
-type gold_segment = {
-  title : string;
-  duration : Duration.t;
-}
-
-type golds = gold_segment array
-
-type speedrun_split = {
-  segment_idx : int;
-  time : Duration.t option;
-}
-
-type state = Idle | Timing | Paused of float | Done
+type timer_state = Idle | Timing | Paused of float | Done
 
 type speedrun = {
-  game_info : game_info;
-  comparison : splits;
-  golds : golds;
+  game : game_info;
+  comparison : Duration.t array option;
 
   start_time : float;
-  state : state;
-  splits : speedrun_split list;
+  state : timer_state;
+  splits : Duration.t option array;
+  curr_split : int;
 }

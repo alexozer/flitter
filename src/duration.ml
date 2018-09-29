@@ -9,8 +9,8 @@ let hour : t = minute * 60
 let day : t = hour * 60
 
 let compiled_re =
-  let re_str = {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|} in
-  Re.Perl.re re_str |> Re.compile
+  {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|}
+  |> Re.Perl.re |> Re.compile
 
 let left_pad_zeros_char_list str size =
   let rec prepend char_list n =
@@ -35,11 +35,11 @@ let of_string str =
 
     let to_int_default x = if String.length x = 0 then 0 else Int.of_string x in
 
-    let days = Array.get group_strs 1 |> to_int_default in
-    let hours = Array.get group_strs 2 |> to_int_default in
-    let minutes = Array.get group_strs 3 |> to_int_default in
-    let seconds = Array.get group_strs 4 |> to_int_default in
-    let millis = Array.get group_strs 5 |> right_pad_zeros 3 |> to_int_default in
+    let days = group_strs.(1) |> to_int_default in
+    let hours = group_strs.(2) |> to_int_default in
+    let minutes = group_strs.(3) |> to_int_default in
+    let seconds = group_strs.(4) |> to_int_default in
+    let millis = group_strs.(5) |> right_pad_zeros 3 |> to_int_default in
 
     Some (
       day * days +
@@ -93,3 +93,7 @@ let to_string duration decimals =
     ".";
     millis_str;
   ]
+
+let since time_float =
+  (Unix.gettimeofday () -. time_float) *. 1000.
+  |> Int.of_float
