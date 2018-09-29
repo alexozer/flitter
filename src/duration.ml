@@ -49,7 +49,7 @@ let of_string str =
       milli * millis
     )
 
-let to_string duration decimals =
+let to_string_pos duration decimals =
   let days = duration / day in
   let duration_day = duration % day in
 
@@ -93,6 +93,10 @@ let to_string duration decimals =
     ".";
     millis_str;
   ]
+
+let to_string duration decimals =
+  if duration < 0 then "-" ^ to_string_pos (-duration) decimals
+  else to_string_pos duration decimals
 
 let since time_float =
   (Unix.gettimeofday () -. time_float) *. 1000.

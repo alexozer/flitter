@@ -28,14 +28,14 @@ let () =
 
     comparison = Some [|
         4000;
-        3500;
-        3750;
+        6000;
+        8500;
       |];
 
     start_time = Unix.gettimeofday ();
     state = Timing;
     splits = Array.make 3 None;
-    curr_split = 0;
+    curr_split = 1;
   } in
 
   let rec refresh disp =

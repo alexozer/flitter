@@ -23,10 +23,10 @@ module Color = struct
 
   (* https://flatuicolors.com/palette/cn *)
   let text = attr_of_string "#f1f2f6"
-  let ahead_gain = attr_of_string "#2ed573"
+  let ahead_gain = A.(attr_of_string "#2ed573" ++ st bold)
   let ahead_loss = attr_of_string "#7bed9f"
   let behind_gain = attr_of_string "#ff6b81"
-  let behind_loss = attr_of_string "#ff4757"
+  let behind_loss = A.(attr_of_string "#ff4757" ++ st bold)
   let gold = attr_of_string "#ffa502"
   let idle = attr_of_string "#1e90ff"
   let bg = A.(fg bg_color ++ bg bg_color)
@@ -56,8 +56,9 @@ let join_pad width left right =
 
 let preamble run width =
   let center = center_pad width in
-  let title = I.string Color.text run.game.title |> center in
-  let category = I.string Color.text run.game.category |> center in
+  let bold_color = A.(Color.text ++ st bold) in
+  let title = I.string bold_color run.game.title |> center in
+  let category = I.string bold_color run.game.category |> center in
 
   I.(title <-> category)
 
@@ -121,16 +122,67 @@ let time_color run split_num =
           else if delta > prev_delta then Color.behind_loss else Color.behind_gain
         )
 
+let segment_time run split_num =
+  if split_num > run.curr_split then None else
+
+    let curr_time =
+      if split_num = run.curr_split 
+      then Some (Duration.since run.start_time)
+      else run.splits.(split_num)
+    in
+
+    let last_time = if split_num = 0 then Some 0 else run.splits.(split_num - 1) in
+
+    match curr_time, last_time with
+    | Some t1, Some t2 -> Some (t1 - t2)
+    | _ -> None
+
+let split_row run width i =
+  let title = I.string Color.text run.game.split_names.(i) in
+  let time_cols =
+    if i > run.curr_split then I.char Color.bg ' ' (time_col_width * 3) 1
+
+    else
+      let delta_image =
+        match ahead_by run i with
+        | None -> I.string Color.text "-"
+        | Some delta -> 
+          let time_str = Duration.to_string delta 1 in
+          let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
+          I.string (time_color run i) time_str_sign
+      in
+
+      let sgmt_image =
+        match segment_time run i with
+        | None -> I.string Color.text "-"
+        | Some sgmt -> I.string Color.text (Duration.to_string sgmt 1)
+      in
+
+      let time_str =
+        if i = run.curr_split then 
+          Duration.to_string (Duration.since run.start_time) 1
+        else
+          match run.splits.(i) with
+          | Some time -> Duration.to_string time 1
+          | None -> if i < run.curr_split then "-" else ""
+      in
+      let time_image = I.string Color.text time_str in
+
+      List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
+      |> I.hcat
+  in
+
+  join_pad width title time_cols
+
+let splits run width =
+  Array.mapi run.game.split_names ~f:(fun i _ -> split_row run width i)
+  |> Array.to_list |> I.vcat
+
 let big_timer run width =
   let time, color = match run.state with
     | Idle -> 0, Color.idle
 
-    | Timing ->
-      let time = 
-        (Unix.gettimeofday () -. run.start_time) *. 1000.
-        |> Int.of_float in
-      let color = time_color run run.curr_split in
-      time, color
+    | Timing -> Duration.since run.start_time, time_color run run.curr_split
 
     | Paused pause_time ->
       let time = (pause_time -. run.start_time) *. 1000. |> Int.of_float in
@@ -164,9 +216,9 @@ let display run (w, h) =
       preamble run w <->
       void w 1 <->
       splits_header w <->
-      (* splits run width_ <-> *)
-      big_timer run w <->
+      splits run w <->
       void w 1 <->
+      big_timer run w <->
       post_info run w
     ) </> I.char Color.bg ' ' w h
   )
