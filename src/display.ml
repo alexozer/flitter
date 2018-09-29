@@ -106,24 +106,26 @@ let time_color run split_num =
         )
 
 let split_row run width i =
-  let title = I.string Colors.text run.game.split_names.(i) in
+  let bg_color = if i = run.curr_split then Colors.selection_bg else Colors.default_bg in
+
+  let title = I.string A.(Colors.text ++ bg bg_color) run.game.split_names.(i) in
   let time_cols =
     if i > run.curr_split then I.char Colors.bg ' ' (time_col_width * 3) 1
 
     else
       let delta_image =
         match ahead_by run i with
-        | None -> I.string Colors.text "-"
+        | None -> I.string A.(Colors.text ++ bg bg_color) "-"
         | Some delta -> 
           let time_str = Duration.to_string delta 1 in
           let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
-          I.string (time_color run i) time_str_sign
+          I.string A.(time_color run i ++ bg bg_color) time_str_sign
       in
 
       let sgmt_image =
         match segment_time run i with
-        | None -> I.string Colors.text "-"
-        | Some sgmt -> I.string Colors.text (Duration.to_string sgmt 1)
+        | None -> I.string A.(Colors.text ++ bg bg_color) "-"
+        | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
       in
 
       let time_str =
@@ -134,13 +136,15 @@ let split_row run width i =
           | Some time -> Duration.to_string time 1
           | None -> if i < run.curr_split then "-" else ""
       in
-      let time_image = I.string Colors.text time_str in
+      let time_image = I.string A.(Colors.text ++ bg bg_color) time_str in
 
       List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
       |> I.hcat
   in
 
-  join_pad width title time_cols
+  let row_top = join_pad width title time_cols in
+  let row_bottom = I.char A.(fg bg_color ++ bg bg_color) ' ' width 1 in
+  I.(row_top </> row_bottom)
 
 let splits run width =
   Array.mapi run.game.split_names ~f:(fun i _ -> split_row run width i)
