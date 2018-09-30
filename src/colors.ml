@@ -20,6 +20,7 @@ let attr_of_hexstring str =
   A.(fg (color_of_hexstring str) ++ bg default_bg)
 
 (* https://flatuicolors.com/palette/cn *)
+(* TODO Find better color palette *)
 let text = attr_of_hexstring "#f1f2f6"
 let ahead_gain = A.(attr_of_hexstring "#2ed573" ++ st bold)
 let ahead_loss = attr_of_hexstring "#7bed9f"
