@@ -182,7 +182,23 @@ let sob run width =
 let post_info run width =
   sob run width
 
+(* Result might be slightly bigger than given size *)
+let rec subdivide_space color w h max_size =
+  if w > max_size || h > max_size then
+    let subspace = subdivide_space color (w / 2 + 1) (h / 2 + 1) max_size in
+    I.((subspace <|> subspace) <-> (subspace <|> subspace))
+  else
+    I.char color ' ' w h
+
 let display run (w, h) =
+  (* TODO remedy this Notty bug workaround 
+     Overlaying the timer with a Notty char grid (I.char) seems to cause 
+     flickering at a high draw rate, but drawing smaller regions of the background
+     doesn't seem to.
+
+     I'd guess this is a bug in Notty as I was able to reproduce in
+     a few different terminals (Gnome-terminal, Termite, urxvt, not xterm though)
+  *)
   I.(
     (
       preamble run w <->
@@ -192,7 +208,7 @@ let display run (w, h) =
       void w 1 <->
       big_timer run w <->
       post_info run w
-    ) </> I.char Colors.bg ' ' w h
+    ) </> subdivide_space Colors.bg w h 80
   )
 
 type t = Notty_lwt.Term.t
