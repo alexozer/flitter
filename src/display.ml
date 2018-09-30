@@ -170,7 +170,7 @@ let display run (w, h) =
       void w 1 <->
       big_timer run w <->
       post_info run w
-    ) </> subdivide_space Colors.bg w h 40
+    ) </> subdivide_space Colors.bg w h 10
   )
 
 type t = Notty_lwt.Term.t
