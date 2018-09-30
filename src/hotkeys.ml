@@ -1,6 +1,7 @@
 open Base
 
 type keypress = float * string
+type t = keypress Lwt_stream.t
 
 let python_detect_keys = {|
 import time

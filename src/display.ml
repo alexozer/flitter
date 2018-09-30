@@ -195,12 +195,12 @@ let display run (w, h) =
     ) </> I.char Colors.bg ' ' w h
   )
 
-type t = Notty_unix.Term.t
+type t = Notty_lwt.Term.t
 
 let make () =
-  Notty_unix.Term.create ()
+  Notty_lwt.Term.create ()
 
 let draw term run =
-  let open Notty_unix in
+  let open Notty_lwt in
   let image = display run (Term.size term) in
   Term.image term image

@@ -1,6 +1,6 @@
 (library
   (name flitter)
   (wrapped false)
-  (libraries base notty notty.unix re color lwt lwt.unix)
+  (libraries base notty notty_lwt re color lwt lwt.unix)
   (preprocess (pps lwt_ppx))
   )
