@@ -1,5 +1,5 @@
 open Base
-open Splits
+open Timer_types
 
 type t = {
   game : game_info;
@@ -14,6 +14,29 @@ type t = {
   display : Display.t;
   hotkeys_stream : Hotkeys.t;
 }
+
+type event = Draw_tick | Key of Hotkeys.keypress
+
+(* let handle_key flitter key =
+   let t, str = key in
+   match flitter.state with
+   | Idle -> (
+      match str with
+      | "space" -> {
+          flitter with
+          state = Timing;
+          start_time = t;
+          curr_split = 0;
+        }
+      | "q" -> raise Exit
+      | _ -> flitter
+    )
+
+   | Timing -> (
+      match str with
+      | 
+    ) *)
+
 
 (* A crutch for quick testing *)
 let of_speedrun run =

@@ -1,6 +1,6 @@
 open Base
 open Notty
-open Splits
+open Timer_types
 
 let time_col_width = 10
 
@@ -42,44 +42,6 @@ let splits_header width =
 
   I.(padded <-> br)
 
-let rec ahead_by run split_num =
-  if split_num < 0 then None else
-    match run.comparison with
-    | None -> None
-    | Some comp_times ->
-      if split_num = run.curr_split then
-        Some (Duration.since run.start_time - comp_times.(split_num))
-
-      else
-        match run.splits.(split_num) with
-        | None -> ahead_by run (split_num - 1)
-        | Some time -> Some (time - comp_times.(split_num))
-
-let segment_time run split_num =
-  if split_num > run.curr_split then None else
-
-    let curr_time =
-      if split_num = run.curr_split 
-      then Some (Duration.since run.start_time)
-      else run.splits.(split_num)
-    in
-
-    let last_time = if split_num = 0 then Some 0 else run.splits.(split_num - 1) in
-
-    match curr_time, last_time with
-    | Some t1, Some t2 -> Some (t1 - t2)
-    | _ -> None
-
-let is_gold run split_num =
-  if split_num >= run.curr_split then false else
-    match run.game.golds with
-    | None -> false
-    | Some golds -> (
-        match segment_time run split_num with 
-        | Some seg_time -> seg_time < golds.(split_num)
-        | None -> false
-      )
-
 let time_color run split_num =
   (* 
   If this isn't the current split, check if segment is a gold
@@ -93,11 +55,11 @@ let time_color run split_num =
       color depends on whether currently ahead and how lead/loss compares to last available lead/loss
   *)
 
-  if is_gold run split_num then Colors.rainbow () else
-    match ahead_by run split_num with
+  if Splits.is_gold run split_num then Colors.rainbow () else
+    match Splits.ahead_by run split_num with
     | None -> Colors.ahead_gain
     | Some delta ->
-      match ahead_by run (split_num - 1) with
+      match Splits.ahead_by run (split_num - 1) with
       | None -> (if delta < 0 then Colors.ahead_gain else Colors.behind_loss)
       | Some prev_delta -> (
           if delta < 0 
@@ -114,7 +76,7 @@ let split_row run width i =
 
     else
       let delta_image =
-        match ahead_by run i with
+        match Splits.ahead_by run i with
         | None -> I.string A.(Colors.text ++ bg bg_color) "-"
         | Some delta -> 
           let time_str = Duration.to_string delta 1 in
@@ -123,7 +85,7 @@ let split_row run width i =
       in
 
       let sgmt_image =
-        match segment_time run i with
+        match Splits.segment_time run i with
         | None -> I.string A.(Colors.text ++ bg bg_color) "-"
         | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
       in

@@ -1,21 +1,40 @@
-type game_info = {
-  title : string;
-  category : string;
-  attempts : int;
-  completed_runs : int;
+open Base
+open Timer_types
 
-  split_names : string array;
-  golds : Duration.t array option;
-}
+let rec ahead_by run split_num =
+  if split_num < 0 then None else
+    match run.comparison with
+    | None -> None
+    | Some comp_times ->
+      if split_num = run.curr_split then
+        Some (Duration.since run.start_time - comp_times.(split_num))
 
-type timer_state = Idle | Timing | Paused of float | Done
+      else
+        match run.splits.(split_num) with
+        | None -> ahead_by run (split_num - 1)
+        | Some time -> Some (time - comp_times.(split_num))
 
-type speedrun = {
-  game : game_info;
-  comparison : Duration.t array option;
+let segment_time run split_num =
+  if split_num > run.curr_split then None else
 
-  start_time : float;
-  state : timer_state;
-  splits : Duration.t option array;
-  curr_split : int;
-}
+    let curr_time =
+      if split_num = run.curr_split 
+      then Some (Duration.since run.start_time)
+      else run.splits.(split_num)
+    in
+
+    let last_time = if split_num = 0 then Some 0 else run.splits.(split_num - 1) in
+
+    match curr_time, last_time with
+    | Some t1, Some t2 -> Some (t1 - t2)
+    | _ -> None
+
+let is_gold run split_num =
+  if split_num >= run.curr_split then false else
+    match run.game.golds with
+    | None -> false
+    | Some golds -> (
+        match segment_time run split_num with 
+        | Some seg_time -> seg_time < golds.(split_num)
+        | None -> false
+      )
