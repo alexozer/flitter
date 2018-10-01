@@ -68,11 +68,11 @@ let time_color run split_num =
         )
 
 let split_row run width i =
-  let bg_color = if i = run.curr_split then Colors.selection_bg else Colors.default_bg in
+  let idle = match run.state with Idle -> true | _ -> false in
+  let bg_color = if not idle && i = run.curr_split then Colors.selection_bg else Colors.default_bg in
 
   let title = I.string A.(Colors.text ++ bg bg_color) run.game.split_names.(i) in
   let time_cols =
-    let idle = match run.state with Idle -> true | _ -> false in
     if idle || i > run.curr_split then
       I.char Colors.bg ' ' (time_col_width * 3) 1
 
