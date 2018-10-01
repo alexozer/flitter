@@ -13,30 +13,10 @@ type t = {
 
   display : Display.t;
   hotkeys_stream : Hotkeys.t;
+  last_draw : float option;
 }
 
 type event = Draw_tick | Key of Hotkeys.keypress
-
-(* let handle_key flitter key =
-   let t, str = key in
-   match flitter.state with
-   | Idle -> (
-      match str with
-      | "space" -> {
-          flitter with
-          state = Timing;
-          start_time = t;
-          curr_split = 0;
-        }
-      | "q" -> raise Exit
-      | _ -> flitter
-    )
-
-   | Timing -> (
-      match str with
-      | 
-    ) *)
-
 
 (* A crutch for quick testing *)
 let of_speedrun run =
@@ -57,6 +37,7 @@ let of_speedrun run =
 
     display = Display.make ();
     hotkeys_stream = hotkeys_stream;
+    last_draw = None;
   }
 
 let to_speedrun flitter =
@@ -70,21 +51,119 @@ let to_speedrun flitter =
     curr_split = flitter.curr_split;
   }
 
-let loop flitter =
+let array_replace arr i value =
+  let copy = Array.copy arr in
+  copy.(i) <- value;
+  copy
+
+let handle_draw flitter =
+  let t = Unix.gettimeofday () in
+  let%lwt () = Display.draw flitter.display (to_speedrun flitter) in
+  Lwt.return {flitter with last_draw = Some t}
+
+let handle_key flitter (t, key_str) =
+  let run = to_speedrun flitter in
+
+  match flitter.state with
+  | Idle -> (
+      match key_str with
+      | "space" -> {
+          flitter with
+          state = Timing;
+          start_time = t;
+          curr_split = 0;
+        }
+      | "q" -> raise Stdlib.Exit
+      | _ -> flitter
+    )
+
+  | Timing -> (
+      match key_str with
+      | "space" | "j" -> {
+          flitter with
+
+          state = 
+            if flitter.curr_split = (Array.length flitter.game.split_names) - 1
+            then Done else Timing;
+
+          splits = array_replace flitter.splits flitter.curr_split 
+              (Splits.segment_time run ~now:t flitter.curr_split);
+
+          curr_split = flitter.curr_split + 1;
+        }
+      | "backspace" | "delete" -> {flitter with state = Paused t}
+      | "d" -> {
+          flitter with
+          splits =
+            if flitter.curr_split > 0 then
+              array_replace flitter.splits (flitter.curr_split - 1) None
+            else
+              flitter.splits;
+        }
+      | _ -> flitter
+    )
+
+  | Paused pause_t -> (
+      match key_str with
+      | "space" -> {
+          flitter with 
+          start_time = pause_t -. flitter.start_time;
+          state = Timing;
+        }
+
+      (* TODO save golds on backspace, but not delete *)
+      | "backspace" | "delete" -> {flitter with state = Idle}
+      | _ -> flitter
+    )
+
+  | Done -> (
+      match key_str with
+      (* TODO save golds on backspace, but not delete *)
+      | "backspace" | "delete" | "space" -> {flitter with state = Idle}
+      | "k" -> {
+          flitter with
+          curr_split = flitter.curr_split - 1;
+          state = Timing;
+        }
+      | _ -> flitter
+    )
+
+let draw_event flitter =
   let period = 1. /. 60. in
 
-  let rec refresh () =
-    let deadline = Unix.gettimeofday () +. period in
-    let%lwt () = Display.draw flitter.display (to_speedrun flitter) in
-    let t = Unix.gettimeofday () in
-    let%lwt () =
-      if Float.(t < deadline)
-      then Lwt_unix.sleep (deadline -. t) 
-      else Lwt.return ()
-    in
-    refresh ()
-  in
-  refresh ()
+  match flitter.last_draw with
+  | None -> Lwt.return Draw_tick
+  | Some t ->
+    let deadline = t +. period in
+    let delay = deadline -. Unix.gettimeofday () in
+    if Float.(delay > 0.) then
+      let%lwt () = Lwt_unix.sleep delay in
+      Lwt.return Draw_tick
+    else
+      Lwt.return Draw_tick
+
+let keyboard_event flitter =
+  match%lwt Lwt_stream.get flitter.hotkeys_stream with
+  | Some keypress -> Lwt.return (Key keypress)
+  | None -> failwith "Hotkeys stream exited unexpectedly"
+
+let rec handle_events flitter events =
+  match events with
+  | evt :: remaining_evts -> (
+      let%lwt new_flitter = match evt with
+        | Draw_tick -> handle_draw flitter
+        | Key keypress -> Lwt.return (handle_key flitter keypress)
+      in
+
+      handle_events new_flitter remaining_evts
+    )
+
+  | [] -> Lwt.return flitter
+
+let rec loop flitter =
+  let%lwt events = Lwt.npick [(draw_event flitter); (keyboard_event flitter)] in
+  let%lwt new_flitter = handle_events flitter events in
+  loop new_flitter
 
 let test () =
   let run = {

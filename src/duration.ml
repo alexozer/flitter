@@ -98,6 +98,8 @@ let to_string duration decimals =
   if duration < 0 then "-" ^ to_string_pos (-duration) decimals
   else to_string_pos duration decimals
 
+let between start finish =
+  (finish -. start) *. 1000. |> Int.of_float
+
 let since time_float =
-  (Unix.gettimeofday () -. time_float) *. 1000.
-  |> Int.of_float
+  between time_float (Unix.gettimeofday ())

@@ -1,25 +1,34 @@
 open Base
 open Timer_types
 
-let rec ahead_by run split_num =
+let rec ahead_by run ?now split_num =
+  let curr_seg_time = match now with
+    | Some t -> Duration.between run.start_time t
+    | None -> Duration.since run.start_time
+  in
+
   if split_num < 0 then None else
     match run.comparison with
     | None -> None
     | Some comp_times ->
       if split_num = run.curr_split then
-        Some (Duration.since run.start_time - comp_times.(split_num))
+        Some (curr_seg_time - comp_times.(split_num))
 
       else
         match run.splits.(split_num) with
         | None -> ahead_by run (split_num - 1)
         | Some time -> Some (time - comp_times.(split_num))
 
-let segment_time run split_num =
-  if split_num > run.curr_split then None else
+let segment_time run ?now split_num =
+  let curr_seg_time = match now with
+    | Some t -> Duration.between run.start_time t
+    | None -> Duration.since run.start_time
+  in
 
+  if split_num > run.curr_split then None else
     let curr_time =
       if split_num = run.curr_split 
-      then Some (Duration.since run.start_time)
+      then Some curr_seg_time
       else run.splits.(split_num)
     in
 
