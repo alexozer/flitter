@@ -62,8 +62,6 @@ let handle_draw flitter =
   Lwt.return {flitter with last_draw = Some t}
 
 let handle_key flitter (t, key_str) =
-  let run = to_speedrun flitter in
-
   match flitter.state with
   | Idle -> (
       match key_str with
@@ -86,8 +84,10 @@ let handle_key flitter (t, key_str) =
             if flitter.curr_split = (Array.length flitter.game.split_names) - 1
             then Done else Timing;
 
-          splits = array_replace flitter.splits flitter.curr_split 
-              (Splits.segment_time run ~now:t flitter.curr_split);
+          splits = (
+            let split_time = Duration.between flitter.start_time t in
+            array_replace flitter.splits flitter.curr_split (Some split_time)
+          );
 
           curr_split = flitter.curr_split + 1;
         }

@@ -123,7 +123,19 @@ let big_timer run width =
       let color = time_color run run.curr_split in
       time, color
 
-    | Done -> 0, Colors.ahead_gain
+    | Done -> (
+        let last_split_num = Array.length run.game.split_names - 1 in
+        match run.splits.(last_split_num) with
+        | None -> failwith "Last split found empty on done"
+        | Some time -> (
+            match run.comparison with
+            | None -> time, Colors.ahead_gain
+            | Some comp ->
+              let comp_time = comp.(last_split_num) in
+              let color = if time < comp_time then Colors.rainbow () else Colors.behind_loss in
+              time, color
+          )
+      )
   in
 
   Duration.to_string time 2
