@@ -65,7 +65,7 @@ let handle_key flitter (t, key_str) =
   match flitter.state with
   | Idle -> (
       match key_str with
-      | "space" -> {
+      | "space" | "j" -> {
           flitter with
           state = Timing;
           start_time = t;
@@ -90,6 +90,11 @@ let handle_key flitter (t, key_str) =
           );
 
           curr_split = flitter.curr_split + 1;
+        }
+      | "k" -> {
+          flitter with
+          state = if flitter.curr_split = 0 then Idle else Timing;
+          curr_split = flitter.curr_split - 1;
         }
       | "backspace" | "delete" -> {flitter with state = Paused t}
       | "d" -> {
@@ -125,6 +130,7 @@ let handle_key flitter (t, key_str) =
           curr_split = flitter.curr_split - 1;
           state = Timing;
         }
+      | "q" -> raise Stdlib.Exit;
       | _ -> flitter
     )
 
