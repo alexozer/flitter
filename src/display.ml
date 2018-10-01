@@ -72,7 +72,9 @@ let split_row run width i =
 
   let title = I.string A.(Colors.text ++ bg bg_color) run.game.split_names.(i) in
   let time_cols =
-    if i > run.curr_split then I.char Colors.bg ' ' (time_col_width * 3) 1
+    let idle = match run.state with Idle -> true | _ -> false in
+    if idle || i > run.curr_split then
+      I.char Colors.bg ' ' (time_col_width * 3) 1
 
     else
       let delta_image =
