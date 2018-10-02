@@ -33,15 +33,15 @@ let of_speedrun run =
     display = Display.make ();
   }
 
-let to_speedrun flitter =
+let to_speedrun timer =
   {
-    game = flitter.game;
-    comparison = flitter.pb;
+    game = timer.game;
+    comparison = timer.pb;
 
-    start_time = flitter.start_time;
-    state = flitter.state;
-    splits = flitter.splits;
-    curr_split = flitter.curr_split;
+    start_time = timer.start_time;
+    state = timer.state;
+    splits = timer.splits;
+    curr_split = timer.curr_split;
   }
 
 let array_replace arr i value =
@@ -49,78 +49,78 @@ let array_replace arr i value =
   copy.(i) <- value;
   copy
 
-let handle_key flitter (t, key_str) =
-  match flitter.state with
+let handle_key timer (t, key_str) =
+  match timer.state with
   | Idle -> (
       match key_str with
       | "space" | "j" -> {
-          flitter with
+          timer with
           state = Timing;
           start_time = t;
           curr_split = 0;
         }
       | "q" -> raise Stdlib.Exit
-      | _ -> flitter
+      | _ -> timer
     )
 
   | Timing -> (
       match key_str with
       | "space" | "j" -> {
-          flitter with
+          timer with
 
           state = 
-            if flitter.curr_split = (Array.length flitter.game.split_names) - 1
+            if timer.curr_split = (Array.length timer.game.split_names) - 1
             then Done else Timing;
 
           splits = (
-            let split_time = Duration.between flitter.start_time t in
-            array_replace flitter.splits flitter.curr_split (Some split_time)
+            let split_time = Duration.between timer.start_time t in
+            array_replace timer.splits timer.curr_split (Some split_time)
           );
 
-          curr_split = flitter.curr_split + 1;
+          curr_split = timer.curr_split + 1;
         }
       | "k" -> {
-          flitter with
-          state = if flitter.curr_split = 0 then Idle else Timing;
-          curr_split = flitter.curr_split - 1;
+          timer with
+          state = if timer.curr_split = 0 then Idle else Timing;
+          curr_split = timer.curr_split - 1;
         }
-      | "backspace" | "delete" -> {flitter with state = Paused t}
+      | "backspace" | "delete" -> {timer with state = Paused t}
       | "d" -> {
-          flitter with
+          timer with
           splits =
-            if flitter.curr_split > 0 then
-              array_replace flitter.splits (flitter.curr_split - 1) None
+            if timer.curr_split > 0 then
+              array_replace timer.splits (timer.curr_split - 1) None
             else
-              flitter.splits;
+              timer.splits;
         }
-      | _ -> flitter
+      | _ -> timer
     )
 
   | Paused pause_t -> (
       match key_str with
       | "space" | "j" -> {
-          flitter with 
-          start_time = flitter.start_time +. t -. pause_t;
+          timer with 
+          start_time = timer.start_time +. t -. pause_t;
           state = Timing;
         }
 
       (* TODO save golds on backspace, but not delete *)
-      | "backspace" | "delete" -> {flitter with state = Idle}
-      | _ -> flitter
+      | "backspace" | "delete" -> {timer with state = Idle}
+      | _ -> timer
     )
 
   | Done -> (
       match key_str with
       (* TODO save golds on backspace, but not delete *)
-      | "backspace" | "delete" | "space" -> {flitter with state = Idle}
+      | "backspace" | "delete" | "space" -> {timer with state = Idle}
       | "k" -> {
-          flitter with
-          curr_split = flitter.curr_split - 1;
+          timer with
+          curr_split = timer.curr_split - 1;
           state = Timing;
         }
       | "q" -> raise Stdlib.Exit;
-      | _ -> flitter
+      | _ -> timer
     )
 
-let handle_draw flitter =
-  Display.draw flitter.display (to_speedrun flitter)
+let handle_draw timer =
+  Display.draw timer.display (to_speedrun timer)
