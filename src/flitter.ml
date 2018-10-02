@@ -110,9 +110,9 @@ let handle_key flitter (t, key_str) =
 
   | Paused pause_t -> (
       match key_str with
-      | "space" -> {
+      | "space" | "j" -> {
           flitter with 
-          start_time = pause_t -. flitter.start_time;
+          start_time = flitter.start_time +. t -. pause_t;
           state = Timing;
         }
 

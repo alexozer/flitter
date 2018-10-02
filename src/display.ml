@@ -94,7 +94,7 @@ let split_row run width i =
 
       let time_str =
         if i = run.curr_split then 
-          Duration.to_string (Duration.since run.start_time) 1
+          Duration.to_string (Splits.run_duration run) 1
         else
           match run.splits.(i) with
           | Some time -> Duration.to_string time 1
