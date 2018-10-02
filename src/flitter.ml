@@ -2,151 +2,25 @@ open Base
 open Timer_types
 
 type t = {
-  game : game_info;
-  history : Duration.t array list;
-  pb : Duration.t array option;
-
-  start_time : float;
-  state : timer_state;
-  splits : Duration.t option array;
-  curr_split : int;
-
-  display : Display.t;
+  timer : Timer.t;
+  last_draw : float;
   hotkeys_stream : Hotkeys.t;
-  last_draw : float option;
 }
 
 type event = Draw_tick | Key of Hotkeys.keypress
 
-(* A crutch for quick testing *)
-let of_speedrun run =
-  let history = match run.comparison with
-    | Some comp -> [comp]
-    | None -> []
-  in 
-  let%lwt hotkeys_stream = Hotkeys.make_stream () in
-  Lwt.return {
-    game = run.game;
-    history = history;
-    pb = run.comparison;
-
-    start_time = run.start_time;
-    state = run.state;
-    splits = run.splits;
-    curr_split = run.curr_split;
-
-    display = Display.make ();
-    hotkeys_stream = hotkeys_stream;
-    last_draw = None;
-  }
-
-let to_speedrun flitter =
-  {
-    game = flitter.game;
-    comparison = flitter.pb;
-
-    start_time = flitter.start_time;
-    state = flitter.state;
-    splits = flitter.splits;
-    curr_split = flitter.curr_split;
-  }
-
-let array_replace arr i value =
-  let copy = Array.copy arr in
-  copy.(i) <- value;
-  copy
-
-let handle_draw flitter =
-  let t = Unix.gettimeofday () in
-  let%lwt () = Display.draw flitter.display (to_speedrun flitter) in
-  Lwt.return {flitter with last_draw = Some t}
-
-let handle_key flitter (t, key_str) =
-  match flitter.state with
-  | Idle -> (
-      match key_str with
-      | "space" | "j" -> {
-          flitter with
-          state = Timing;
-          start_time = t;
-          curr_split = 0;
-        }
-      | "q" -> raise Stdlib.Exit
-      | _ -> flitter
-    )
-
-  | Timing -> (
-      match key_str with
-      | "space" | "j" -> {
-          flitter with
-
-          state = 
-            if flitter.curr_split = (Array.length flitter.game.split_names) - 1
-            then Done else Timing;
-
-          splits = (
-            let split_time = Duration.between flitter.start_time t in
-            array_replace flitter.splits flitter.curr_split (Some split_time)
-          );
-
-          curr_split = flitter.curr_split + 1;
-        }
-      | "k" -> {
-          flitter with
-          state = if flitter.curr_split = 0 then Idle else Timing;
-          curr_split = flitter.curr_split - 1;
-        }
-      | "backspace" | "delete" -> {flitter with state = Paused t}
-      | "d" -> {
-          flitter with
-          splits =
-            if flitter.curr_split > 0 then
-              array_replace flitter.splits (flitter.curr_split - 1) None
-            else
-              flitter.splits;
-        }
-      | _ -> flitter
-    )
-
-  | Paused pause_t -> (
-      match key_str with
-      | "space" | "j" -> {
-          flitter with 
-          start_time = flitter.start_time +. t -. pause_t;
-          state = Timing;
-        }
-
-      (* TODO save golds on backspace, but not delete *)
-      | "backspace" | "delete" -> {flitter with state = Idle}
-      | _ -> flitter
-    )
-
-  | Done -> (
-      match key_str with
-      (* TODO save golds on backspace, but not delete *)
-      | "backspace" | "delete" | "space" -> {flitter with state = Idle}
-      | "k" -> {
-          flitter with
-          curr_split = flitter.curr_split - 1;
-          state = Timing;
-        }
-      | "q" -> raise Stdlib.Exit;
-      | _ -> flitter
-    )
+let draw_rate = 60.
 
 let draw_event flitter =
-  let period = 1. /. 60. in
+  let period = 1. /. draw_rate in
 
-  match flitter.last_draw with
-  | None -> Lwt.return Draw_tick
-  | Some t ->
-    let deadline = t +. period in
-    let delay = deadline -. Unix.gettimeofday () in
-    if Float.(delay > 0.) then
-      let%lwt () = Lwt_unix.sleep delay in
-      Lwt.return Draw_tick
-    else
-      Lwt.return Draw_tick
+  let deadline = flitter.last_draw +. period in
+  let delay = deadline -. Unix.gettimeofday () in
+  if Float.(delay > 0.) then
+    let%lwt () = Lwt_unix.sleep delay in
+    Lwt.return Draw_tick
+  else
+    Lwt.return Draw_tick
 
 let keyboard_event flitter =
   match%lwt Lwt_stream.get flitter.hotkeys_stream with
@@ -157,8 +31,13 @@ let rec handle_events flitter events =
   match events with
   | evt :: remaining_evts -> (
       let%lwt new_flitter = match evt with
-        | Draw_tick -> handle_draw flitter
-        | Key keypress -> Lwt.return (handle_key flitter keypress)
+        | Draw_tick -> 
+          let draw_time = Unix.gettimeofday () in
+          let%lwt () = Timer.handle_draw flitter.timer in
+          Lwt.return {flitter with last_draw = draw_time}
+
+        | Key keypress -> 
+          Lwt.return {flitter with timer = Timer.handle_key flitter.timer keypress}
       in
 
       handle_events new_flitter remaining_evts
@@ -204,19 +83,16 @@ let test () =
     curr_split = 2;
   } in
 
-  let%lwt flitter = of_speedrun run in
+  let%lwt hotkeys_stream = Hotkeys.make_stream () in
+
+  let flitter = {
+    timer = Timer.of_speedrun run;
+    last_draw = Unix.gettimeofday () -. 1. /. draw_rate;
+    hotkeys_stream = hotkeys_stream;
+  }
+  in
+
   loop flitter
 
 let run () =
   Lwt_main.run (test ())
-
-(* let show_hotkeys () =
-   let%lwt stream = Hotkeys.make_stream () in
-   let rec show () =
-    match%lwt Lwt_stream.get stream with
-    | Some (time, keypress) ->
-      let%lwt () = Lwt_io.printl @@ "Got " ^ keypress ^ " at time " ^ Float.to_string time in
-      show ()
-    | None -> Lwt.return ()
-   in
-   show () *)
