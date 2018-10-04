@@ -1,0 +1,1 @@
+val load : string -> New_types.game

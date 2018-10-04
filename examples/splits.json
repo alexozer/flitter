@@ -1,0 +1,41 @@
+{
+  "game": "Super Monkey Ball 2: Monkeyed Ball",
+  "category": "Story Mode All Levels",
+  "splitNames": ["Green", "Apricot", "Blue"],
+
+  "personalBest": {
+    "attempt": 3000,
+    "splits": [
+      {
+        "title": "Green",
+        "time": "3000",
+        "is gold": false
+      },
+      {
+        "title": "Apricot",
+        "time": "5000",
+        "is gold": false
+      },
+      {
+        "title": "Apricot",
+        "time": "8000",
+        "is gold": false
+      }
+    ]
+  },
+
+  "golds": [
+    {
+      "title": "Green",
+      "duration": "2000"
+    },
+    {
+      "title": "Apricot",
+      "duration": "2000"
+    },
+    {
+      "title": "Blue",
+      "duration": "2000"
+    }
+  ]
+}

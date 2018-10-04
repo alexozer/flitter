@@ -1,6 +1,8 @@
 (library
   (name flitter)
   (wrapped false)
-  (libraries base notty notty_lwt re color lwt lwt.unix)
-  (preprocess (pps lwt_ppx))
+  (libraries base notty notty_lwt re color lwt ppx_deriving_yojson yojson)
+  (preprocess (pps lwt_ppx ppx_deriving_yojson))
   )
+
+; vim:ft=lisp
