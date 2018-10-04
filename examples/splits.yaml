@@ -1,9 +1,9 @@
 game: 'Super Monkey Ball 2: Monkeyed Ball'
 category: Story Mode All Levels
-total attempts: 3000
-completed runs: 40
+attempts: 3000
+completed: 40
 
-split_names:
+split names:
   - Green
   - Apricot
   - Blue
@@ -20,45 +20,45 @@ personal best:
   splits:
     - title: Green
       time: '2:11'
-      is gold split: false
+      is gold: false
 
     - title: Apricot
       time: '4:31.000'
-      is gold split: false
+      is gold: false
 
     - title: Blue
       time: '6:35'
-      is gold split: false
+      is gold: false
 
     - title: Brown
       time: '0:8:48.00'
-      is gold split: false
+      is gold: false
 
     - title: Pink
       time: '11:03'
-      is gold split: true
+      is gold: true
 
     - title: White
       time: '13:46'
-      is gold split: false
+      is gold: false
 
     - title: Teal
       time: '16:51'
-      is gold split: false
+      is gold: false
 
     - title: Orange
       time: '19:21'
-      is gold split: false
+      is gold: false
 
     - title: Gold
       time: '21:41'
-      is gold split: true
+      is gold: true
 
     - title: Black
       time: '26:16'
-      is gold split: true
+      is gold: true
 
-gold segments:
+golds:
   - title: Green
     duration: '2:10'
 
@@ -89,87 +89,87 @@ gold segments:
   - title: Black
     duration: '4:35'
 
-run history:
+history:
   - attempt: 2999
     splits:
       - title: Green
         time: '2:11'
-        is gold split: false
+        is gold: false
 
       - title: Apricot
         time: '4:31.000'
-        is gold split: false
+        is gold: false
 
       - title: Blue
         time: '6:35'
-        is gold split: false
+        is gold: false
 
       - title: Brown
         time: '0:8:48.00'
-        is gold split: false
+        is gold: false
 
       - title: Pink
         time: '11:03'
-        is gold split: true
+        is gold: true
 
       - title: White
         time: '13:46'
-        is gold split: false
+        is gold: false
 
       - title: Teal
         time: '16:51'
-        is gold split: false
+        is gold: false
 
       - title: Orange
         time: '19:21'
-        is gold split: false
+        is gold: false
 
       - title: Gold
         time: '21:41'
-        is gold split: true
+        is gold: true
 
       - title: Black
         time: '26:16'
-        is gold split: true
+        is gold: true
 
   - attempt: 2998
     splits:
       - title: Green
         time: '2:11'
-        is gold split: false
+        is gold: false
 
       - title: Apricot
         time: '4:31.000'
-        is gold split: false
+        is gold: false
 
       - title: Blue
         time: '6:35'
-        is gold split: false
+        is gold: false
 
       - title: Brown
         time: '0:8:48.00'
-        is gold split: false
+        is gold: false
 
       - title: Pink
         time: '11:03'
-        is gold split: true
+        is gold: true
 
       - title: White
         time: '13:46'
-        is gold split: false
+        is gold: false
 
       - title: Teal
         time: '16:51'
-        is gold split: false
+        is gold: false
 
       - title: Orange
         time: '19:21'
-        is gold split: false
+        is gold: false
 
       - title: Gold
         time: '21:41'
-        is gold split: true
+        is gold: true
 
       - title: Black
         time: '26:16'
-        is gold split: true
+        is gold: true
