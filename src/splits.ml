@@ -14,15 +14,21 @@ let rec ahead_by run ?now split_num =
 
   if split_num < 0 then None else
     match run.comparison with
-    | None -> None
-    | Some comp_times ->
-      if split_num = run.curr_split then
-        Some (curr_run_duration - comp_times.(split_num))
+    | Some comp_times -> (
+        match comp_times.splits.(split_num).time with
+        | Some comp_time -> (
+            if split_num = run.curr_split then
+              Some (curr_run_duration - comp_time)
 
-      else
-        match run.splits.(split_num) with
-        | None -> ahead_by run (split_num - 1)
-        | Some time -> Some (time - comp_times.(split_num))
+            else
+              match run.splits.(split_num) with
+              | None -> ahead_by run (split_num - 1)
+              | Some time -> Some (time - comp_time)
+          )
+        | None -> None
+      )
+
+    | None -> None
 
 let segment_time run ?now split_num =
   let curr_run_duration = match now with
@@ -44,11 +50,30 @@ let segment_time run ?now split_num =
     | _ -> None
 
 let is_gold run split_num =
-  if split_num >= run.curr_split then false else
-    match run.game.golds with
-    | None -> false
-    | Some golds -> (
-        match segment_time run split_num with 
-        | Some seg_time -> seg_time < golds.(split_num)
-        | None -> false
+  if split_num = run.curr_split then false else
+    match segment_time run split_num with
+    | Some seg_time -> (
+        match run.golds.(split_num).duration with
+        | Some duration -> seg_time < duration
+        | None -> true
       )
+    | None -> false
+
+let updated_golds run =
+  let seg_durations = Array.mapi run.splits ~f:(fun i _ ->
+      segment_time run i
+    ) in
+  let old_durations = Array.map run.golds ~f:(fun g -> g.duration) in
+
+  let new_durations = Array.mapi run.split_names ~f:(fun i _ ->
+      if i >= run.curr_split then None else
+        match seg_durations.(i), old_durations.(i) with
+        | Some n, Some o -> if n < o then Some n else Some o
+        | Some n, None -> Some n
+        | None, Some o -> Some o
+        | None, None -> None
+    ) in
+
+  Array.map2_exn run.split_names new_durations ~f:(fun name dur ->
+      {title = name; duration = dur}
+    )

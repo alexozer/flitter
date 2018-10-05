@@ -22,11 +22,11 @@ let join_pad width left right =
   let padded_right = I.hpad center_size 0 right in
   I.(left <|> padded_right)
 
-let preamble run width =
+let preamble timer width =
   let center = center_pad width in
   let bold_color = A.(Colors.text ++ st bold) in
-  let title = I.string bold_color run.game.title |> center in
-  let category = I.string bold_color run.game.category |> center in
+  let title = I.string bold_color timer.title |> center in
+  let category = I.string bold_color timer.category |> center in
 
   I.(title <-> category)
 
@@ -42,7 +42,7 @@ let splits_header width =
 
   I.(padded <-> br)
 
-let time_color run split_num =
+let time_color timer split_num =
   (* 
   If this isn't the current split, check if segment is a gold
   else
@@ -55,11 +55,11 @@ let time_color run split_num =
       color depends on whether currently ahead and how lead/loss compares to last available lead/loss
   *)
 
-  if Splits.is_gold run split_num then Colors.rainbow () else
-    match Splits.ahead_by run split_num with
+  if Splits.is_gold timer split_num then Colors.rainbow () else
+    match Splits.ahead_by timer split_num with
     | None -> Colors.ahead_gain
     | Some delta ->
-      match Splits.ahead_by run (split_num - 1) with
+      match Splits.ahead_by timer (split_num - 1) with
       | None -> (if delta < 0 then Colors.ahead_gain else Colors.behind_loss)
       | Some prev_delta -> (
           if delta < 0 
@@ -67,38 +67,38 @@ let time_color run split_num =
           else if delta > prev_delta then Colors.behind_loss else Colors.behind_gain
         )
 
-let split_row run width i =
-  let idle = match run.state with Idle -> true | _ -> false in
-  let bg_color = if not idle && i = run.curr_split then Colors.selection_bg else Colors.default_bg in
+let split_row timer width i =
+  let idle = match timer.state with Idle -> true | _ -> false in
+  let bg_color = if not idle && i = timer.curr_split then Colors.selection_bg else Colors.default_bg in
 
-  let title = I.string A.(Colors.text ++ bg bg_color) run.game.split_names.(i) in
+  let title = I.string A.(Colors.text ++ bg bg_color) timer.split_names.(i) in
   let time_cols =
-    if idle || i > run.curr_split then
+    if idle || i > timer.curr_split then
       I.char Colors.bg ' ' (time_col_width * 3) 1
 
     else
       let delta_image =
-        match Splits.ahead_by run i with
+        match Splits.ahead_by timer i with
         | None -> I.string A.(Colors.text ++ bg bg_color) "-"
         | Some delta -> 
           let time_str = Duration.to_string delta 1 in
           let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
-          I.string A.(time_color run i ++ bg bg_color) time_str_sign
+          I.string A.(time_color timer i ++ bg bg_color) time_str_sign
       in
 
       let sgmt_image =
-        match Splits.segment_time run i with
+        match Splits.segment_time timer i with
         | None -> I.string A.(Colors.text ++ bg bg_color) "-"
         | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
       in
 
       let time_str =
-        if i = run.curr_split then 
-          Duration.to_string (Splits.run_duration run) 1
+        if i = timer.curr_split then 
+          Duration.to_string (Splits.run_duration timer) 1
         else
-          match run.splits.(i) with
+          match timer.splits.(i) with
           | Some time -> Duration.to_string time 1
-          | None -> if i < run.curr_split then "-" else ""
+          | None -> if i < timer.curr_split then "-" else ""
       in
       let time_image = I.string A.(Colors.text ++ bg bg_color) time_str in
 
@@ -110,32 +110,35 @@ let split_row run width i =
   let row_bottom = I.char A.(fg bg_color ++ bg bg_color) ' ' width 1 in
   I.(row_top </> row_bottom)
 
-let splits run width =
-  Array.mapi run.game.split_names ~f:(fun i _ -> split_row run width i)
+let splits timer width =
+  Array.mapi timer.split_names ~f:(fun i _ -> split_row timer width i)
   |> Array.to_list |> I.vcat
 
-let big_timer run width =
-  let time, color = match run.state with
+let big_timer timer width =
+  let time, color = match timer.state with
     | Idle -> 0, Colors.idle
 
-    | Timing -> Duration.since run.start_time, time_color run run.curr_split
+    | Timing -> Duration.since timer.start_time, time_color timer timer.curr_split
 
     | Paused pause_time ->
-      let time = (pause_time -. run.start_time) *. 1000. |> Int.of_float in
-      let color = time_color run run.curr_split in
+      let time = (pause_time -. timer.start_time) *. 1000. |> Int.of_float in
+      let color = time_color timer timer.curr_split in
       time, color
 
     | Done -> (
-        let last_split_num = Array.length run.game.split_names - 1 in
-        match run.splits.(last_split_num) with
+        let last_split_num = Array.length timer.split_names - 1 in
+        match timer.splits.(last_split_num) with
         | None -> failwith "Last split found empty on done"
         | Some time -> (
-            match run.comparison with
+            match timer.comparison with
             | None -> time, Colors.ahead_gain
-            | Some comp ->
-              let comp_time = comp.(last_split_num) in
-              let color = if time < comp_time then Colors.rainbow () else Colors.behind_loss in
-              time, color
+            | Some comp -> (
+                match comp.splits.(last_split_num).time with
+                | Some comp_time ->
+                  let color = if time < comp_time then Colors.rainbow () else Colors.behind_loss in
+                  time, color
+                | None -> time, Colors.idle
+              )
           )
       )
   in
@@ -144,19 +147,25 @@ let big_timer run width =
   |> Big.image_of_string color
   |> left_pad width
 
-let sob run width =
-  let sob_time = match run.game.golds with
-    | Some golds ->
-      let sob = Array.reduce_exn golds ~f:(+) in
-      I.string Colors.text (Duration.to_string sob 2)
+let sob timer width =
+  let sob_time =
+    let updated_golds = Splits.updated_golds timer in 
+    let sum = Array.fold updated_golds ~init:(Some 0) ~f:(fun sum gold ->
+        match sum, gold.duration with
+        | Some x, Some y -> Some (x + y)
+        | _ -> None
+      ) in
+
+    match sum with
+    | Some sob -> I.string Colors.text (Duration.to_string sob 2)
     | None -> I.empty
   in
 
   let sob_desc = I.string Colors.text "Sum of Best Segments" in
   join_pad width sob_desc sob_time
 
-let post_info run width =
-  sob run width
+let post_info timer width =
+  sob timer width
 
 (* Result might be slightly bigger than given size *)
 let rec subdivide_space color w h max_size =
@@ -166,7 +175,7 @@ let rec subdivide_space color w h max_size =
   else
     I.char color ' ' w h
 
-let display run (w, h) =
+let display timer (w, h) =
   (* TODO remedy this Notty bug workaround 
      Overlaying the timer with a Notty char grid (I.char) seems to cause 
      flickering at a high draw rate, but drawing smaller regions of the background
@@ -177,13 +186,13 @@ let display run (w, h) =
   *)
   I.(
     (
-      preamble run w <->
+      preamble timer w <->
       void w 1 <->
       splits_header w <->
-      splits run w <->
+      splits timer w <->
       void w 1 <->
-      big_timer run w <->
-      post_info run w
+      big_timer timer w <->
+      post_info timer w
     ) </> subdivide_space Colors.bg w h 10
   )
 
@@ -192,7 +201,7 @@ type t = Notty_lwt.Term.t
 let make () =
   Notty_lwt.Term.create ()
 
-let draw term run =
+let draw term timer =
   let open Notty_lwt in
-  let image = display run (Term.size term) in
+  let image = display timer (Term.size term) in
   Term.image term image

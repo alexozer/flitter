@@ -1,1 +1,1 @@
-val load : string -> New_types.game
+val load : string -> Timer_types.timer

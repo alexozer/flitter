@@ -51,21 +51,21 @@ let process_golds game =
           | Some duration -> (
               match Duration.of_string duration with
               | Some parsed_duration -> {
-                  New_types.title = seg.title;
+                  Timer_types.title = seg.title;
                   duration = Some parsed_duration;
                 }
               | None -> failwith ("Invalid time '" ^ duration ^ "' for gold segment " ^ seg.title)
             )
 
           | None -> {
-              New_types.title = seg.title;
+              Timer_types.title = seg.title;
               duration = None;
             }
         )
 
   | None -> 
     Array.map game.splitNames ~f:(fun name ->
-        {New_types.title = name; duration = None}
+        {Timer_types.title = name; duration = None}
       )
 
 let process_run run =
@@ -74,7 +74,7 @@ let process_run run =
       | Some time_str -> (
           match Duration.of_string time_str with
           | Some time -> {
-              New_types.title = split.title;
+              Timer_types.title = split.title;
               time = Some time;
               is_gold = split.isGold;
             }
@@ -82,16 +82,16 @@ let process_run run =
         )
 
       | None -> {
-          New_types.title = split.title;
+          Timer_types.title = split.title;
           time = None;
           is_gold = false;
         }
     )
   in
 
-  {New_types.attempt = run.attempt; splits = splits}
+  {Timer_types.attempt = run.attempt; splits = splits}
 
-let load filepath : New_types.game =
+let load filepath =
   let json = Yojson.Safe.from_file filepath in
   match game_of_yojson json with
   | Error err -> failwith err
@@ -104,7 +104,7 @@ let load filepath : New_types.game =
     let history = List.map game.history ~f:process_run in
 
     {
-      New_types.title = game.title;
+      Timer_types.title = game.title;
       category = game.category;
       attempts = game.attempts;
       completed = game.completed;
@@ -113,4 +113,10 @@ let load filepath : New_types.game =
       pb = pb;
       golds = golds;
       history = history;
+
+      comparison = pb;
+      state = Idle;
+      start_time = 0.;
+      splits = Array.create ~len:(Array.length game.splitNames) None;
+      curr_split = 0;
     }
