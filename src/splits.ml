@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 open Timer_types
 
 let run_duration run =

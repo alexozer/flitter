@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 
 type keypress = float * string
 type t = keypress Lwt_stream.t

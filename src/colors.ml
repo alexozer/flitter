@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 open Notty
 
 let color_of_hexstring str =

@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 open Timer_types
 
 type t = {
@@ -103,7 +103,7 @@ let handle_key flitter (t, key_str) =
             curr_split = timer.curr_split - 1;
             state = Timing;
           }
-        | "q" -> raise Stdlib.Exit;
+        | "q" -> raise Stdlib.Exit
         | _ -> timer
       )
   in
@@ -111,21 +111,21 @@ let handle_key flitter (t, key_str) =
 
 let handle_draw flitter =
   let draw_time = Unix.gettimeofday () in
-  let%lwt () = Display.draw flitter.display flitter.timer in
-  Lwt.return {flitter with last_draw = draw_time}
+  Display.draw flitter.display flitter.timer;
+  {flitter with last_draw = draw_time}
 
 let rec handle_events flitter events =
   match events with
   | evt :: remaining_evts -> (
-      let%lwt new_flitter = match evt with
+      let new_flitter = match evt with
         | Draw_tick -> handle_draw flitter
-        | Key keypress -> Lwt.return (handle_key flitter keypress)
+        | Key keypress -> handle_key flitter keypress
       in
 
       handle_events new_flitter remaining_evts
     )
 
-  | [] -> Lwt.return flitter
+  | [] -> flitter
 
 let make timer =
   let%lwt hotkeys_stream = Hotkeys.make_stream () in
@@ -137,7 +137,15 @@ let make timer =
     hotkeys_stream = hotkeys_stream;
   }
 
-let rec loop flitter =
-  let%lwt events = Lwt.npick [(draw_event flitter); (keyboard_event flitter)] in
-  let%lwt new_flitter = handle_events flitter events in
-  loop new_flitter
+let loop flitter =
+  let rec loop' flitter =
+    let%lwt events = Lwt.npick [(draw_event flitter); (keyboard_event flitter)] in
+    let new_flitter = handle_events flitter events in
+    loop' new_flitter
+  in
+
+  Lwt.catch (fun () -> loop' flitter)
+    (function 
+      | Stdlib.Exit -> Lwt.return (Display.close flitter.display)
+      | exn -> raise exn
+    )

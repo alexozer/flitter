@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 open Notty
 open Timer_types
 
@@ -121,7 +121,7 @@ let big_timer timer width =
     | Timing -> Duration.since timer.start_time, time_color timer timer.curr_split
 
     | Paused pause_time ->
-      let time = (pause_time -. timer.start_time) *. 1000. |> Int.of_float in
+      let time = Duration.between timer.start_time pause_time in
       let color = time_color timer timer.curr_split in
       time, color
 
@@ -196,12 +196,15 @@ let display timer (w, h) =
     ) </> subdivide_space Colors.bg w h 10
   )
 
-type t = Notty_lwt.Term.t
+type t = Notty_unix.Term.t
 
 let make () =
-  Notty_lwt.Term.create ()
+  Notty_unix.Term.create ()
 
 let draw term timer =
-  let open Notty_lwt in
+  let open Notty_unix in
   let image = display timer (Term.size term) in
   Term.image term image
+
+let close term =
+  Notty_unix.Term.release term

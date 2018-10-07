@@ -5,3 +5,5 @@
 (install
  (section bin)
  (files (main.exe as flitter)))
+
+ ; vim:ft=scheme

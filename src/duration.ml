@@ -1,4 +1,4 @@
-open Base
+open Core_kernel
 
 type t = int
 
@@ -11,6 +11,8 @@ let day : t = hour * 60
 let compiled_re =
   {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|}
   |> Re.Perl.re |> Re.compile
+
+let string_valid = Re.execp compiled_re
 
 let left_pad_zeros_char_list str size =
   let rec prepend char_list n =
