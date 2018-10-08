@@ -14,7 +14,13 @@ type archived_run = {
   splits : split array;
 }
 
-type timer_state = Idle | Timing | Paused of float | Done
+type live_splits = Duration.t option array
+
+type timer_state = 
+  | Idle
+  | Timing of live_splits * float (* splits * start time *)
+  | Paused of live_splits * float * float (* splits * start time * paused time *)
+  | Done of live_splits * float (* completed splits * start time *)
 
 (* Most of timer state is bundled together in this single package.
    Since it is the minimum information both the display and control logic need available,
@@ -26,13 +32,9 @@ type timer = {
   completed : int;
 
   split_names : string array;
-  pb : archived_run option;
   golds : gold array;
   history : archived_run list;
-
   comparison : archived_run option;
+
   state : timer_state;
-  start_time : float;
-  splits : Duration.t option array;
-  curr_split : int;
 }

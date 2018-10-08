@@ -137,13 +137,9 @@ let load filepath =
     completed = game.completed;
 
     split_names = game.split_names;
-    pb = pb;
     golds = golds;
     history = history;
 
     comparison = pb;
     state = Idle;
-    start_time = 0.;
-    splits = Array.create ~len:(Array.length game.split_names) None;
-    curr_split = 0;
   }

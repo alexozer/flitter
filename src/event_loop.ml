@@ -40,69 +40,68 @@ let handle_key flitter (t, key_str) =
         match key_str with
         | "space" | "j" -> {
             timer with
-            state = Timing;
-            start_time = t;
-            curr_split = 0;
+            state = Timing ([||], t)
           }
         | "q" -> raise Stdlib.Exit
         | _ -> timer
       )
 
-    | Timing -> (
+    | Timing (splits, start_time) -> (
+        let curr_split = Array.length splits in
         match key_str with
-        | "space" | "j" -> {
-            timer with
+        | "space" | "j" -> 
+          let curr_split_time = Some (Duration.between start_time t) in
+          let new_splits = Array.append splits [|curr_split_time|] in
 
-            state = 
-              if timer.curr_split = (Array.length timer.split_names) - 1
-              then Done else Timing;
+          let new_state = 
+            if Array.length new_splits = Array.length timer.split_names
+            then Done (new_splits, start_time)
+            else Timing (new_splits, start_time)
+          in
+          {timer with state = new_state}
 
-            splits = (
-              let split_time = Duration.between timer.start_time t in
-              array_replace timer.splits timer.curr_split (Some split_time)
-            );
+        | "k" -> 
+          let new_state =
+            if curr_split = 0 then Idle 
+            else Timing ((Array.slice splits 0 (curr_split - 1)), start_time)
+          in
+          {timer with state = new_state}
 
-            curr_split = timer.curr_split + 1;
-          }
-        | "k" -> {
-            timer with
-            state = if timer.curr_split = 0 then Idle else Timing;
-            curr_split = timer.curr_split - 1;
-          }
-        | "backspace" | "delete" -> {timer with state = Paused t}
-        | "d" -> {
-            timer with
-            splits =
-              if timer.curr_split > 0 then
-                array_replace timer.splits (timer.curr_split - 1) None
-              else
-                timer.splits;
-          }
+        | "backspace" | "delete" -> {timer with state = Paused (splits, start_time, t)}
+
+        | "d" -> 
+          let new_state =
+            if curr_split > 0 then
+              let new_splits = array_replace splits (curr_split - 1) None in
+              Timing (new_splits, start_time)
+            else
+              Idle
+          in
+          {timer with state = new_state}
+
         | _ -> timer
       )
 
-    | Paused pause_t -> (
+    | Paused (splits, start_time, pause_time) -> (
         match key_str with
-        | "space" | "j" -> {
-            timer with 
-            start_time = timer.start_time +. t -. pause_t;
-            state = Timing;
-          }
+        | "space" | "j" -> 
+          let new_state = Timing (splits, start_time +. t -. pause_time) in
+          {timer with state = new_state}
 
         (* TODO save golds on backspace, but not delete *)
         | "backspace" | "delete" -> {timer with state = Idle}
         | _ -> timer
       )
 
-    | Done -> (
+    | Done (splits, start_time) -> (
         match key_str with
         (* TODO save golds on backspace, but not delete *)
         | "backspace" | "delete" | "space" -> {timer with state = Idle}
-        | "k" -> {
-            timer with
-            curr_split = timer.curr_split - 1;
-            state = Timing;
-          }
+
+        | "k" -> 
+          let new_splits = Array.(slice splits 0 (length splits - 1)) in
+          {timer with state = Timing (new_splits, start_time)}
+
         | "q" -> raise Stdlib.Exit
         | _ -> timer
       )
@@ -146,6 +145,6 @@ let loop flitter =
 
   Lwt.catch (fun () -> loop' flitter)
     (function 
-      | Stdlib.Exit -> Lwt.return (Display.close flitter.display)
+      | Stdlib.Exit -> Display.close flitter.display; Lwt.return ()
       | exn -> raise exn
     )

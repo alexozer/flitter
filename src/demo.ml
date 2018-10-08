@@ -1,4 +1,3 @@
-open Core_kernel
 open Timer_types
 
 let timer =
@@ -29,13 +28,7 @@ let timer =
       {title = "Blue"; duration = Some 2000};
     |];
 
-    pb = pb;
     comparison = pb;
-
     history = [];
-
-    start_time = Unix.gettimeofday ();
-    state = Timing;
-    splits = Array.of_list [Some 1500; None; None];
-    curr_split = 2;
+    state = Timing ([|Some 1500; None|], Unix.gettimeofday ())
   }

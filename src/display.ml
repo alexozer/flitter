@@ -68,44 +68,66 @@ let time_color timer split_num =
         )
 
 let split_row timer width i =
-  let idle = match timer.state with Idle -> true | _ -> false in
-  let bg_color = if not idle && i = timer.curr_split then Colors.selection_bg else Colors.default_bg in
-
-  let title = I.string A.(Colors.text ++ bg bg_color) timer.split_names.(i) in
-  let time_cols =
-    if idle || i > timer.curr_split then
-      I.char Colors.bg ' ' (time_col_width * 3) 1
-
-    else
-      let delta_image =
-        match Splits.ahead_by timer i with
-        | None -> I.string A.(Colors.text ++ bg bg_color) "-"
-        | Some delta -> 
-          let time_str = Duration.to_string delta 1 in
-          let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
-          I.string A.(time_color timer i ++ bg bg_color) time_str_sign
-      in
-
-      let sgmt_image =
-        match Splits.segment_time timer i with
-        | None -> I.string A.(Colors.text ++ bg bg_color) "-"
-        | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
-      in
-
-      let time_str =
-        if i = timer.curr_split then 
-          Duration.to_string (Splits.run_duration timer) 1
-        else
-          match timer.splits.(i) with
-          | Some time -> Duration.to_string time 1
-          | None -> if i < timer.curr_split then "-" else ""
-      in
-      let time_image = I.string A.(Colors.text ++ bg bg_color) time_str in
-
-      List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
-      |> I.hcat
+  let bg_color = match timer.state with
+    | Idle | Done _ -> Colors.default_bg
+    | Timing (splits, _) | Paused (splits, _, _) -> 
+      if i = Array.length splits then Colors.selection_bg else Colors.default_bg
   in
 
+  let curr_split = match timer.state with
+    | Idle -> -1
+    | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
+      Array.length splits
+  in
+  let show_comparison = i >= curr_split in
+
+  let title = I.string A.(Colors.text ++ bg bg_color) timer.split_names.(i) in
+
+  (* Compute the split's ahead/behind time image *)
+  let delta_image =
+    if show_comparison then
+      I.string Colors.text "-"
+    else
+      match Splits.ahead_by timer i with
+      | None -> I.string A.(Colors.text ++ bg bg_color) "-"
+      | Some delta -> 
+        let time_str = Duration.to_string delta 1 in
+        let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
+        I.string A.(time_color timer i ++ bg bg_color) time_str_sign
+  in
+
+  (* Compute the image of the split's segment time *)
+  let sgmt_image =
+    let seg_time = 
+      if show_comparison 
+      then Splits.archived_segment_time timer i
+      else Splits.segment_time timer i
+    in
+
+    match seg_time with
+    | None -> I.string A.(Colors.text ++ bg bg_color) "-"
+    | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
+  in
+
+  (* Compute the image of the split's absolute time *)
+  let time =
+    if show_comparison
+    then Splits.archived_split_time timer curr_split
+    else Splits.split_time timer curr_split
+  in
+  let time_str = match time with
+    | Some t -> Duration.to_string t 1
+    | None -> "-"
+  in
+  let time_image = I.string A.(Colors.text ++ bg bg_color) time_str in
+
+  (* Combine the three time columns together with proper padding *)
+  let time_cols =
+    List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
+    |> I.hcat
+  in
+
+  (* Add the split title and background color to fill in the padding *)
   let row_top = join_pad width title time_cols in
   let row_bottom = I.char A.(fg bg_color ++ bg bg_color) ' ' width 1 in
   I.(row_top </> row_bottom)
@@ -118,26 +140,29 @@ let big_timer timer width =
   let time, color = match timer.state with
     | Idle -> 0, Colors.idle
 
-    | Timing -> Duration.since timer.start_time, time_color timer timer.curr_split
-
-    | Paused pause_time ->
-      let time = Duration.between timer.start_time pause_time in
-      let color = time_color timer timer.curr_split in
+    | Timing (splits, start_time) -> 
+      let time = Duration.since start_time in
+      let color = time_color timer (Array.length splits) in
       time, color
 
-    | Done -> (
-        let last_split_num = Array.length timer.split_names - 1 in
-        match timer.splits.(last_split_num) with
+    | Paused (splits, start_time, pause_time) ->
+      let time = Duration.between start_time pause_time in
+      let color = time_color timer (Array.length splits) in
+      time, color
+
+    | Done (splits, _) -> (
+        let last_split_num = Array.length splits - 1 in
+        match splits.(last_split_num) with
         | None -> failwith "Last split found empty on done"
         | Some time -> (
             match timer.comparison with
             | None -> time, Colors.ahead_gain
             | Some comp -> (
                 match comp.splits.(last_split_num).time with
+                | None -> failwith "Last split of comparison found empty"
                 | Some comp_time ->
                   let color = if time < comp_time then Colors.rainbow () else Colors.behind_loss in
                   time, color
-                | None -> time, Colors.idle
               )
           )
       )
