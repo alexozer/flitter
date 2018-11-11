@@ -69,7 +69,6 @@ let updated_golds timer =
   match timer.state with
   | Idle -> timer.golds
   | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
-
     let seg_durations = Array.mapi splits ~f:(fun i _ ->
         segment_time timer i
       ) in
