@@ -4,16 +4,16 @@
  (completed 30)
  (split_names 
    (
-    Green
-    Apricot
-    Blue
-    Brown
-    Pink
-    White
-    Teal
-    Orange
-    Gold
-    Black
+    "World 1"
+    "World 2"
+    "World 3"
+    "World 4"
+    "World 5"
+    "World 6"
+    "World 7"
+    "World 8"
+    "World 9"
+    "World 10"
     ))
 
  (personal_best 
@@ -21,30 +21,30 @@
     (attempt 3300)
     (splits 
       (
-       ((title Green) (time 2:13.452) (is_gold false))
-       ((title Apricot) (time 4:38.674) (is_gold false))
-       ((title Blue) (time 6:40.914) (is_gold false))
-       ((title Brown) (time 9:01.587) (is_gold false))
-       ((title Pink) (time 11:10.919) (is_gold false))
-       ((title White) (time 13:48.715) (is_gold false))
-       ((title Teal) (time 16:23.567) (is_gold false))
-       ((title Orange) (time 18:52.029) (is_gold false))
-       ((title Gold) (time 21:30.100) (is_gold false))
-       ((title Black) (time 25:32.917) (is_gold false))
+       ((title "World 1") (time 2:13.452) (is_gold false))
+       ((title "World 2") (time 4:38.674) (is_gold false))
+       ((title "World 3") (time 6:40.914) (is_gold false))
+       ((title "World 4") (time 9:01.587) (is_gold false))
+       ((title "World 5") (time 11:10.919) (is_gold false))
+       ((title "World 6") (time 13:48.715) (is_gold false))
+       ((title "World 7") (time 16:23.567) (is_gold false))
+       ((title "World 8") (time 18:52.029) (is_gold false))
+       ((title "World 9") (time 21:30.100) (is_gold false))
+       ((title "World 10") (time 25:32.917) (is_gold false))
        ))
     )
    )
 
    (golds (
-     ((title Green) (duration 2:10.664))
-     ((title Apricot) (duration 2:19.000))
-     ((title Blue) (duration 2:02.240))
-     ((title Brown) (duration 2:16.000))
-     ((title Pink) (duration 2:09.331))
-     ((title White) (duration 2:24.000))
-     ((title Teal) (duration 2:34.852))
-     ((title Orange) (duration 2:28.461))
-     ((title Gold) (duration 2:29.000))
-     ((title Black) (duration 4:02.817))
+     ((title "World 1") (duration 2:10.664))
+     ((title "World 2") (duration 2:19.000))
+     ((title "World 3") (duration 2:02.240))
+     ((title "World 4") (duration 2:16.000))
+     ((title "World 5") (duration 2:09.331))
+     ((title "World 6") (duration 2:24.000))
+     ((title "World 7") (duration 2:34.852))
+     ((title "World 8") (duration 2:28.461))
+     ((title "World 9") (duration 2:29.000))
+     ((title "World 10") (duration 4:02.817))
      )
    ))
