@@ -87,12 +87,12 @@ let handle_key flitter (t, key_str) =
           let new_state = Timing (splits, start_time +. t -. pause_time) in
           {timer with state = new_state}
 
-        (* TODO save golds on backspace, but not delete *)
         | "backspace" -> 
           let new_timer = {
             timer with 
             state = Idle;
             golds = Splits.updated_golds timer;
+            attempts = timer.attempts + 1;
           } in
           Loadsave.save new_timer;
           new_timer
@@ -103,8 +103,25 @@ let handle_key flitter (t, key_str) =
 
     | Done (splits, start_time) -> (
         match key_str with
-        (* TODO save golds on backspace, but not delete *)
-        | "backspace" | "delete" | "space" -> {timer with state = Idle}
+        | "space" | "backspace" ->
+          let archived_run = Splits.archive_done_run timer splits in
+          let pb = Splits.updated_pb timer in
+
+          let new_timer = {
+            timer with
+            state = Idle;
+            golds = Splits.updated_golds timer;
+            attempts = timer.attempts + 1;
+            completed = timer.completed + 1;
+            history = archived_run :: timer.history; 
+            pb = pb;
+            comparison = pb;
+          } in
+
+          Loadsave.save new_timer;
+          new_timer
+
+        | "delete" -> {timer with state = Idle}
 
         | "k" -> 
           let new_splits = if Array.length splits = 1 

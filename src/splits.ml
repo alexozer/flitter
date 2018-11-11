@@ -101,3 +101,32 @@ let archived_segment_time run split_num =
   match t0, t1 with
   | Some t0', Some t1' -> Some (t1' - t0')
   | _ -> None
+
+let archive_done_run timer splits =
+  let run_splits = Array.mapi timer.split_names ~f:(fun i name ->
+      {
+        title = name;
+        time = splits.(i);
+        is_gold = is_gold timer i;
+      }
+    ) in
+
+  {
+    attempt = timer.attempts;
+    splits = run_splits;
+  }
+
+let updated_pb timer =
+  match timer.state with
+  | Idle | Timing _ | Paused _ -> timer.pb
+  | Done (splits, _) -> (
+      match timer.pb with
+      | None -> None
+      | Some pb_run -> (
+          let last_idx = Array.length splits - 1 in
+          match splits.(last_idx), pb_run.splits.(last_idx).time with
+          | Some new_t, Some old_t -> 
+            if new_t < old_t then Some (archive_done_run timer splits) else timer.pb
+          | _ -> None
+        )
+    )
