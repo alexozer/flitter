@@ -11,13 +11,13 @@ let color_of_hexstring str =
 let color_of_hsl h s l =
   let hsl = Color.of_hsl h s l in
   let rgba = Color.to_rgba hsl in
-  A.rgb_888 ~r:rgba.r ~g:rgba.g ~b: rgba.b
+  A.rgb_888 ~r:rgba.r ~g:rgba.g ~b:rgba.b
 
-let default_bg = color_of_hexstring "#2f3542"
-let selection_bg = color_of_hexstring "#485460"
+let default_bg = A.(bg (color_of_hexstring "#2f3542")) 
+let selection_bg = A.(bg (color_of_hexstring "#485460")) 
 
 let attr_of_hexstring str =
-  A.(fg (color_of_hexstring str) ++ bg default_bg)
+  A.(fg (color_of_hexstring str) ++ default_bg)
 
 (* https://flatuicolors.com/palette/cn *)
 (* TODO Find better color palette *)
@@ -27,11 +27,10 @@ let ahead_loss = attr_of_hexstring "#7bed9f"
 let behind_gain = attr_of_hexstring "#ff6b81"
 let behind_loss = A.(attr_of_hexstring "#ff4757" ++ st bold)
 let idle = attr_of_hexstring "#1e90ff"
-let bg = A.(fg default_bg ++ bg default_bg)
 let label = attr_of_hexstring "#a4b0be"
 
 let rainbow () =
   let period = 3. in
   let h = Float.mod_float (Unix.gettimeofday ()) period /. period *. 360. in
   let rb = color_of_hsl h 1. 0.7 in
-  A.(fg rb ++ bg default_bg ++ st bold)
+  A.(fg rb ++ default_bg ++ st bold)

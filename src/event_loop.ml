@@ -17,11 +17,8 @@ let draw_event flitter =
 
   let deadline = flitter.last_draw +. period in
   let delay = deadline -. Unix.gettimeofday () in
-  if Float.(delay > 0.) then
-    let%lwt () = Lwt_unix.sleep delay in
-    Lwt.return Draw_tick
-  else
-    Lwt.return Draw_tick
+  let%lwt () = if Float.(delay > 0.) then Lwt_unix.sleep delay else Lwt.return_unit in
+  Lwt.return Draw_tick
 
 let keyboard_event flitter =
   match%lwt Lwt_stream.get flitter.hotkeys_stream with
@@ -62,8 +59,10 @@ let handle_key flitter (t, key_str) =
 
         | "k" -> 
           let new_state =
-            if curr_split = 0 then Idle 
-            else Timing ((Array.slice splits 0 (curr_split - 1)), start_time)
+            match curr_split with
+            | 0 -> Idle
+            | 1 -> Timing ([||], start_time)
+            | _ -> Timing ((Array.slice splits 0 (curr_split - 1)), start_time)
           in
           {timer with state = new_state}
 
@@ -99,7 +98,10 @@ let handle_key flitter (t, key_str) =
         | "backspace" | "delete" | "space" -> {timer with state = Idle}
 
         | "k" -> 
-          let new_splits = Array.(slice splits 0 (length splits - 1)) in
+          let new_splits = if Array.length splits = 1 
+            then [||] 
+            else Array.(slice splits 0 (length splits - 1)) 
+          in
           {timer with state = Timing (new_splits, start_time)}
 
         | "q" -> raise Stdlib.Exit
@@ -139,12 +141,8 @@ let make timer =
 let loop flitter =
   let rec loop' flitter =
     let%lwt events = Lwt.npick [(draw_event flitter); (keyboard_event flitter)] in
-    let new_flitter = handle_events flitter events in
-    loop' new_flitter
+    match handle_events flitter events with
+    | new_flitter -> loop' new_flitter
+    | exception Stdlib.Exit -> Display.close flitter.display; Lwt.return ()
   in
-
-  Lwt.catch (fun () -> loop' flitter)
-    (function 
-      | Stdlib.Exit -> Display.close flitter.display; Lwt.return ()
-      | exn -> raise exn
-    )
+  loop' flitter

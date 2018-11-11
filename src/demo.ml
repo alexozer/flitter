@@ -30,5 +30,5 @@ let timer =
 
     comparison = pb;
     history = [];
-    state = Timing ([|Some 1500; None|], Unix.gettimeofday ())
+    state = Timing ([|Some 1500|], Unix.gettimeofday ())
   }

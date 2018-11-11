@@ -2,7 +2,7 @@ open Core_kernel
 open Timer_types
 
 let split_time timer ?now split_num =
-  if split_num <= 0 then Some 0 else
+  if split_num < 0 then Some 0 else
     let curr_time = match now with Some t -> t | None -> Unix.gettimeofday () in
 
     match timer.state with
@@ -30,15 +30,16 @@ let duration timer =
     )
 
 let ahead_by timer ?now split_num =
-  let split_time = split_time timer ?now split_num in
-  let comp_time = match timer.comparison with
-    | None -> None
-    | Some comp -> comp.splits.(split_num).time
-  in
+  if split_num < 0 then None else
+    let split_time = split_time timer ?now split_num in
+    let comp_time = match timer.comparison with
+      | None -> None
+      | Some comp -> comp.splits.(split_num).time
+    in
 
-  match split_time, comp_time with
-  | Some st, Some ct -> Some (st - ct)
-  | _ -> None
+    match split_time, comp_time with
+    | Some st, Some ct -> Some (st - ct)
+    | _ -> None
 
 let segment_time timer ?now split_num =
   let t0 = split_time timer ?now (split_num - 1) in
@@ -48,14 +49,21 @@ let segment_time timer ?now split_num =
   | Some t0', Some t1' -> Some (t1' - t0')
   | _ -> None
 
+let current_split timer =
+  match timer.state with
+  | Idle -> None
+  | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
+    Some (Array.length splits)
+
 let is_gold timer split_num =
-  match segment_time timer split_num with
-  | Some seg_time -> (
-      match timer.golds.(split_num).duration with
-      | Some duration -> seg_time < duration
-      | None -> true
+  match current_split timer, segment_time timer split_num with
+  | Some n, Some seg_time -> (
+      if split_num >= n then false else
+        match timer.golds.(split_num).duration with
+        | Some duration -> seg_time < duration
+        | None -> true
     )
-  | None -> false
+  | _ -> false
 
 let updated_golds timer =
   match timer.state with

@@ -9,7 +9,7 @@ let left_pad width i =
   I.hpad (width - I.width i) 0 i
 
 let center_pad width i =
-  if I.width i > width 
+  if I.width i > width
   then I.hcrop 0 (I.width i - width) i
   else
     let pad = (width - I.width i) in
@@ -39,11 +39,10 @@ let splits_header width =
   let padded = left_pad width joined in
 
   let br = I.uchar Colors.label (Caml.Uchar.of_int 0x2500) width 1 in
-
   I.(padded <-> br)
 
 let time_color timer split_num =
-  (* 
+  (*
   If this isn't the current split, check if segment is a gold
   else
     Find current time
@@ -62,64 +61,66 @@ let time_color timer split_num =
       match Splits.ahead_by timer (split_num - 1) with
       | None -> (if delta < 0 then Colors.ahead_gain else Colors.behind_loss)
       | Some prev_delta -> (
-          if delta < 0 
+          if delta < 0
           then if delta < prev_delta then Colors.ahead_gain else Colors.ahead_loss
           else if delta > prev_delta then Colors.behind_loss else Colors.behind_gain
         )
 
 let split_row timer width i =
-  let bg_color = match timer.state with
+  let bg_attr = match timer.state with
     | Idle | Done _ -> Colors.default_bg
-    | Timing (splits, _) | Paused (splits, _, _) -> 
+    | Timing (splits, _) | Paused (splits, _, _) ->
       if i = Array.length splits then Colors.selection_bg else Colors.default_bg
   in
+  let uncolored_attr = A.(Colors.text ++ bg_attr) in
 
   let curr_split = match timer.state with
     | Idle -> -1
     | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
       Array.length splits
   in
-  let show_comparison = i >= curr_split in
+  let show_comparison = i > curr_split in
 
-  let title = I.string A.(Colors.text ++ bg bg_color) timer.split_names.(i) in
+  let title = I.string bg_attr timer.split_names.(i) in
 
   (* Compute the split's ahead/behind time image *)
   let delta_image =
     if show_comparison then
-      I.string Colors.text "-"
+      I.string uncolored_attr "-"
     else
       match Splits.ahead_by timer i with
-      | None -> I.string A.(Colors.text ++ bg bg_color) "-"
-      | Some delta -> 
+      | None -> I.string uncolored_attr "-"
+      | Some delta ->
         let time_str = Duration.to_string delta 1 in
         let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
-        I.string A.(time_color timer i ++ bg bg_color) time_str_sign
+        let color = A.(time_color timer i ++ bg_attr) in
+        I.string color time_str_sign
   in
 
   (* Compute the image of the split's segment time *)
   let sgmt_image =
-    let seg_time = 
-      if show_comparison 
+    let seg_time =
+      if show_comparison
       then Splits.archived_segment_time timer i
       else Splits.segment_time timer i
     in
 
     match seg_time with
-    | None -> I.string A.(Colors.text ++ bg bg_color) "-"
-    | Some sgmt -> I.string A.(Colors.text ++ bg bg_color) (Duration.to_string sgmt 1)
+    | None -> I.string uncolored_attr "-"
+    | Some sgmt -> I.string uncolored_attr (Duration.to_string sgmt 1)
   in
 
   (* Compute the image of the split's absolute time *)
   let time =
     if show_comparison
-    then Splits.archived_split_time timer curr_split
-    else Splits.split_time timer curr_split
+    then Splits.archived_split_time timer i
+    else Splits.split_time timer i
   in
   let time_str = match time with
     | Some t -> Duration.to_string t 1
     | None -> "-"
   in
-  let time_image = I.string A.(Colors.text ++ bg bg_color) time_str in
+  let time_image = I.string uncolored_attr time_str in
 
   (* Combine the three time columns together with proper padding *)
   let time_cols =
@@ -129,7 +130,7 @@ let split_row timer width i =
 
   (* Add the split title and background color to fill in the padding *)
   let row_top = join_pad width title time_cols in
-  let row_bottom = I.char A.(fg bg_color ++ bg bg_color) ' ' width 1 in
+  let row_bottom = I.char bg_attr ' ' width 1 in
   I.(row_top </> row_bottom)
 
 let splits timer width =
@@ -140,7 +141,7 @@ let big_timer timer width =
   let time, color = match timer.state with
     | Idle -> 0, Colors.idle
 
-    | Timing (splits, start_time) -> 
+    | Timing (splits, start_time) ->
       let time = Duration.since start_time in
       let color = time_color timer (Array.length splits) in
       time, color
@@ -174,7 +175,7 @@ let big_timer timer width =
 
 let sob timer width =
   let sob_time =
-    let updated_golds = Splits.updated_golds timer in 
+    let updated_golds = Splits.updated_golds timer in
     let sum = Array.fold updated_golds ~init:(Some 0) ~f:(fun sum gold ->
         match sum, gold.duration with
         | Some x, Some y -> Some (x + y)
@@ -201,8 +202,8 @@ let rec subdivide_space color w h max_size =
     I.char color ' ' w h
 
 let display timer (w, h) =
-  (* TODO remedy this Notty bug workaround 
-     Overlaying the timer with a Notty char grid (I.char) seems to cause 
+  (* TODO remedy this Notty bug workaround
+     Overlaying the timer with a Notty char grid (I.char) seems to cause
      flickering at a high draw rate, but drawing smaller regions of the background
      doesn't seem to.
 
@@ -218,7 +219,7 @@ let display timer (w, h) =
       void w 1 <->
       big_timer timer w <->
       post_info timer w
-    ) </> subdivide_space Colors.bg w h 10
+    ) </> subdivide_space Colors.default_bg w h 10
   )
 
 type t = Notty_unix.Term.t
