@@ -76,7 +76,9 @@ let updated_golds timer =
     let old_durations = Array.map timer.golds ~f:(fun g -> g.duration) in
 
     let new_durations = Array.mapi timer.split_names ~f:(fun i _ ->
-        if i >= Array.length splits then None else
+        if i >= Array.length splits
+        then old_durations.(i)
+        else
           match seg_durations.(i), old_durations.(i) with
           | Some n, Some o -> if n < o then Some n else Some o
           | Some n, None -> Some n
