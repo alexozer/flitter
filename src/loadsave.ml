@@ -141,5 +141,58 @@ let load filepath =
     history = history;
 
     comparison = pb;
+    pb = pb;
     state = Idle;
+
+    splits_file = filepath;
   }
+
+let save (timer : Timer_types.timer) =
+  let map_run (run : Timer_types.archived_run) = 
+    {
+      attempt = run.attempt;
+      splits = Array.map run.splits ~f:(fun split -> 
+          {
+            title = split.title;
+            time = (
+              match split.time with 
+              | Some t -> Some (Duration.to_string t 3)
+              | None -> None
+            );
+            is_gold = split.is_gold;
+          }
+        );
+    } 
+  in
+
+  let map_gold (gold : Timer_types.gold) =
+    {
+      title = gold.title;
+      duration = match gold.duration with
+        | Some duration -> Some (Duration.to_string duration 3)
+        | None -> None;
+    }
+  in
+
+  let pb = match timer.pb with
+    | Some run -> Some (map_run run)
+    | None -> None
+  in
+
+  let history = List.map timer.history ~f:map_run in
+
+  let game = {
+    title = timer.title;
+    category = timer.category;
+    attempts = timer.attempts;
+    completed = timer.completed;
+
+    split_names = timer.split_names;
+    golds = Some (Array.map timer.golds ~f:map_gold);
+    history = history;
+    personal_best = pb;
+  } in
+
+  let sexp = sexp_of_game game in
+  let sexp_string = Sexp_pretty.sexp_to_string sexp in
+  Out_channel.write_all timer.splits_file ~data:sexp_string

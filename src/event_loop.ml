@@ -88,7 +88,16 @@ let handle_key flitter (t, key_str) =
           {timer with state = new_state}
 
         (* TODO save golds on backspace, but not delete *)
-        | "backspace" | "delete" -> {timer with state = Idle}
+        | "backspace" -> 
+          let new_timer = {
+            timer with 
+            state = Idle;
+            golds = Splits.updated_golds timer;
+          } in
+          Loadsave.save new_timer;
+          new_timer
+
+        | "delete" -> {timer with state = Idle}
         | _ -> timer
       )
 

@@ -35,6 +35,9 @@ type timer = {
   golds : gold array;
   history : archived_run list;
   comparison : archived_run option;
+  pb : archived_run option;
 
   state : timer_state;
+
+  splits_file : string;
 }
