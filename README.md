@@ -2,6 +2,8 @@
 
 A speedrunning / split timer for the terminal.
 
+![Animated demo GIF](doc/demo.gif)
+
 ## Features
 
 - Global hotkeys
