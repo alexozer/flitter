@@ -62,9 +62,9 @@ $ dune install
 
 Create your splits:
 
-Copy `examples/splits.scm` somewhere. Edit it and add your game and split information. Neither a personal best time nor gold segments are required.
+Copy `examples/splits.scm` somewhere. Edit it and add your game and split information. The personal best splits, world record splits, and gold segments are not required.
 
-Launch flitter with your splits file:
+Launch Flitter with your splits file:
 
 ```bash
 $ flitter my-splits.scm
