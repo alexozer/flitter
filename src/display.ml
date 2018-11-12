@@ -30,8 +30,11 @@ let preamble timer width =
 
   I.(title <-> category)
 
-let splits_header width =
-  let labels = ["Delta"; "Sgmt"; "Time"] in
+let splits_header timer width =
+  let labels = match timer.wr with
+    | Some _ -> ["Delta"; "Sgmt"; "Time"; "WR"] 
+    | None -> ["Delta"; "Sgmt"; "Time"]
+  in
 
   let colored = List.map ~f:(I.string Colors.label) labels in
   let cell_padded = List.map ~f:(left_pad time_col_width) colored in
@@ -155,14 +158,44 @@ let split_row timer width i =
   in
   let time_image = I.string uncolored_attr time_str in
 
+  (* Compute the image of the WR comparison cell *)
+  let wr_image = match timer.wr with
+    | None -> None
+    | Some wr_run ->
+      let default_img = 
+        match wr_run.splits.(i).time with
+        | Some t -> Some (I.string uncolored_attr (Duration.to_string t 2))
+        | None -> Some (I.string uncolored_attr "-")
+      in
+
+      if i >= curr_split then default_img else
+
+        (* Determine how much we're ahead or behind WR *)
+        match timer.state with
+        | Idle -> default_img
+        | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) -> (
+            match splits.(i), wr_run.splits.(i).time with
+            | Some curr_t, Some wr_t ->
+              let delta = curr_t - wr_t in
+              let delta_str = Duration.to_string_plus delta 2 in
+              let delta_color = if delta < 0 then Colors.ahead_gain else Colors.behind_gain in
+              Some (I.string delta_color delta_str)
+            | _ -> Some (I.string uncolored_attr "-")
+          )
+  in
+
   (* Combine the three time columns together with proper padding *)
-  let time_cols =
-    List.map [delta_image; sgmt_image; time_image] ~f:(left_pad time_col_width)
+  let time_cells = match wr_image with
+    | Some wr -> [delta_image; sgmt_image; time_image; wr]
+    | None -> [delta_image; sgmt_image; time_image]
+  in
+  let time_cols_combined =
+    List.map time_cells ~f:(left_pad time_col_width)
     |> I.hcat
   in
 
   (* Add the split title and background color to fill in the padding *)
-  let row_top = join_pad width title time_cols in
+  let row_top = join_pad width title time_cols_combined in
   let row_bottom = I.char bg_attr ' ' width 1 in
   I.(row_top </> row_bottom)
 
@@ -266,7 +299,7 @@ let display timer (w, h) =
     (
       preamble timer w <->
       void w 1 <->
-      splits_header w <->
+      splits_header timer w <->
       splits timer w <->
       void w 1 <->
       big_timer timer w <->

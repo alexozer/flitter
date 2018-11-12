@@ -36,6 +36,7 @@ type timer = {
   history : archived_run list;
   comparison : archived_run option;
   pb : archived_run option;
+  wr : archived_run option;
 
   state : timer_state;
 

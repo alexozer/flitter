@@ -49,6 +49,7 @@ type game = {
   split_names : string array;
   golds : gold array sexp_option;
   personal_best : archived_run sexp_option;
+  world_record : archived_run sexp_option;
   history : archived_run sexp_list;
 }
 [@@deriving sexp]
@@ -58,20 +59,27 @@ let game_of_sexp sexp =
   let num_splits = Array.length game.split_names in
   if num_splits = 0 then of_sexp_error "No split names defined" sexp
   else
-    let pb_ok = match game.personal_best with
-      | Some run -> Array.length run.splits = num_splits
-      | None -> true
-    in
-    if not pb_ok 
-    then of_sexp_error "Personal best has different number of splits than split_names" sexp
-    else
-      let history_runs_ok = List.fold game.history ~init:true ~f:(
-          fun all_ok run -> all_ok && Array.length run.splits = num_splits
-        )
+
+    let check_run run =
+      let pb_ok = match run with
+        | Some r -> Array.length r.splits = num_splits
+        | None -> true
       in
-      if not history_runs_ok 
-      then of_sexp_error "Not all history runs have same number of splits as split_names" sexp
-      else game
+      if not pb_ok 
+      then of_sexp_error "Personal best has different number of splits than split_names" sexp
+      else ()
+    in
+
+    check_run game.personal_best;
+    check_run game.world_record;
+
+    let history_runs_ok = List.fold game.history ~init:true ~f:(
+        fun all_ok run -> all_ok && Array.length run.splits = num_splits
+      )
+    in
+    if not history_runs_ok 
+    then of_sexp_error "Not all history runs have same number of splits as split_names" sexp
+    else game
 
 let load_golds parsed_game =
   match parsed_game.golds with
@@ -121,12 +129,14 @@ let load_run parsed_run =
 
   {Timer_types.attempt = parsed_run.attempt; splits = splits}
 
+let load_run_opt = function 
+  | Some run -> Some (load_run run) 
+  | None -> None
+
 let load filepath =
   let game = Sexp.load_sexp_conv_exn filepath game_of_sexp in
-  let pb = match game.personal_best with
-    | Some run -> Some (load_run run)
-    | None -> None
-  in
+  let pb = load_run_opt game.personal_best in
+  let wr = load_run_opt game.world_record in
   let golds = load_golds game in
   let history = List.map game.history ~f:load_run in
 
@@ -142,29 +152,33 @@ let load filepath =
 
     comparison = pb;
     pb = pb;
+    wr = wr;
     state = Idle;
 
     splits_file = filepath;
   }
 
-let save (timer : Timer_types.timer) =
-  let map_run (run : Timer_types.archived_run) = 
-    {
-      attempt = run.attempt;
-      splits = Array.map run.splits ~f:(fun split -> 
-          {
-            title = split.title;
-            time = (
-              match split.time with 
-              | Some t -> Some (Duration.to_string t 3)
-              | None -> None
-            );
-            is_gold = split.is_gold;
-          }
-        );
-    } 
-  in
+let export_run (run : Timer_types.archived_run) = 
+  {
+    attempt = run.attempt;
+    splits = Array.map run.splits ~f:(fun split -> 
+        {
+          title = split.title;
+          time = (
+            match split.time with 
+            | Some t -> Some (Duration.to_string t 3)
+            | None -> None
+          );
+          is_gold = split.is_gold;
+        }
+      );
+  } 
 
+let map_run_opt = function
+  | Some run -> Some (export_run run)
+  | None -> None
+
+let save (timer : Timer_types.timer) =
   let map_gold (gold : Timer_types.gold) =
     {
       title = gold.title;
@@ -174,12 +188,10 @@ let save (timer : Timer_types.timer) =
     }
   in
 
-  let pb = match timer.pb with
-    | Some run -> Some (map_run run)
-    | None -> None
-  in
+  let pb = map_run_opt timer.pb in
+  let wr = map_run_opt timer.wr in
 
-  let history = List.map timer.history ~f:map_run in
+  let history = List.map timer.history ~f:export_run in
 
   let game = {
     title = timer.title;
@@ -191,6 +203,7 @@ let save (timer : Timer_types.timer) =
     golds = Some (Array.map timer.golds ~f:map_gold);
     history = history;
     personal_best = pb;
+    world_record = wr;
   } in
 
   let sexp = sexp_of_game game in
