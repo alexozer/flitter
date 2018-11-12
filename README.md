@@ -2,7 +2,9 @@
 
 A speedrunning / split timer for the terminal.
 
-![Animated demo GIF](doc/demo.gif)
+![Animated demo GIF](/doc/demo.gif)
+
+[All screenshots](/doc/)
 
 ## Features
 
