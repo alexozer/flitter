@@ -124,10 +124,9 @@ let split_row timer width i =
       | None -> I.string uncolored_attr "-"
       | Some delta -> (
           if not (show_delta timer i) then I.string uncolored_attr "" else
-            let time_str = Duration.to_string delta 1 in
-            let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
+            let time_str = Duration.to_string_plus delta 1 in
             let color = A.(time_color timer i ++ bg_attr) in
-            I.string color time_str_sign
+            I.string color time_str
         )
   in
 
@@ -207,6 +206,28 @@ let big_timer timer width =
   |> Big.image_of_string color
   |> left_pad width
 
+let previous_segment timer width =
+  let desc_img = I.string Colors.default_bg "Previous Segment" in
+  let empty_time_img = I.string Colors.default_bg "-" in
+
+  let time_img = match timer.state with
+    | Idle -> empty_time_img
+    | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
+      let curr_split = Array.length splits in
+      let prev_delta = Splits.ahead_by timer (curr_split - 1) in
+      let prev_prev_delta = Splits.ahead_by timer (curr_split - 2) in
+      (match prev_delta, prev_prev_delta with
+       | Some pd, Some ppd ->
+         let diff = pd - ppd in
+         let diff_str = Duration.to_string_plus diff 2 in
+         let color = if diff < 0 then Colors.ahead_gain else Colors.behind_loss in
+         I.string color diff_str
+       | _ -> empty_time_img
+      )
+  in
+
+  join_pad width desc_img time_img
+
 let sob timer width =
   let sob_time =
     let updated_golds = Splits.updated_golds timer in
@@ -223,9 +244,6 @@ let sob timer width =
 
   let sob_desc = I.string Colors.text "Sum of Best Segments" in
   join_pad width sob_desc sob_time
-
-let post_info timer width =
-  sob timer width
 
 (* Result might be slightly bigger than given size *)
 let rec subdivide_space color w h max_size =
@@ -252,7 +270,8 @@ let display timer (w, h) =
       splits timer w <->
       void w 1 <->
       big_timer timer w <->
-      post_info timer w
+      previous_segment timer w <->
+      sob timer w
     ) </> subdivide_space Colors.default_bg w h 10
   )
 

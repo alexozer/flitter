@@ -100,6 +100,10 @@ let to_string duration decimals =
   if duration < 0 then "-" ^ to_string_pos (-duration) decimals
   else to_string_pos duration decimals
 
+let to_string_plus duration decimals =
+  let str = to_string duration decimals in
+  if duration >= 0 then "+" ^ str else str
+
 let between start finish =
   (finish -. start) *. 1000. |> Int.of_float
 
