@@ -261,22 +261,45 @@ let previous_segment timer width =
 
   join_pad width desc_img time_img
 
-let sob timer width =
-  let sob_time =
-    let updated_golds = Splits.updated_golds timer in
-    let sum = Array.fold updated_golds ~init:(Some 0) ~f:(fun sum gold ->
-        match sum, gold.duration with
-        | Some x, Some y -> Some (x + y)
-        | _ -> None
-      ) in
+let best_possible_time timer width =
+  let t = match timer.state with
+    | Idle -> Splits.gold_sum timer 0 (Array.length timer.split_names)
+    | Timing (splits, _) | Paused (splits, _, _) ->
+      let curr_split = Array.length splits in
+      let total_splits = Array.length timer.split_names in
 
-    match sum with
+      let future_sob = Splits.gold_sum timer (curr_split + 1) (total_splits) in
+      let curr_gold = (Splits.updated_golds timer).(curr_split).duration in
+      let last_split_time = if curr_split = 0 then Some 0 else splits.(curr_split - 1) in
+      let curr_seg = Splits.segment_time timer curr_split in
+
+      (match future_sob, curr_gold, last_split_time, curr_seg with
+       | Some future_sob', Some curr_gold', Some last_split_time', Some curr_seg' ->
+         Some (last_split_time' + max curr_seg' curr_gold' + future_sob')
+       | _ -> None
+      )
+    | Done (splits, _) -> splits.(Array.length splits - 1)
+  in
+
+  let time_img = match t with
+    | Some t' ->
+      let time_str = Duration.to_string t' 2 in
+      I.string Colors.text time_str
+    | None -> I.string Colors.text "-"
+  in
+
+  let desc_img = I.string Colors.text "Best Possible Time" in
+  join_pad width desc_img time_img
+
+let sob timer width =
+  let sob_time = Splits.gold_sum timer 0 (Array.length timer.split_names) in
+  let sob_img = match sob_time with
     | Some sob -> I.string Colors.text (Duration.to_string sob 2)
     | None -> I.empty
   in
 
   let sob_desc = I.string Colors.text "Sum of Best Segments" in
-  join_pad width sob_desc sob_time
+  join_pad width sob_desc sob_img
 
 (* Result might be slightly bigger than given size *)
 let rec subdivide_space color w h max_size =
@@ -304,7 +327,8 @@ let display timer (w, h) =
       void w 1 <->
       big_timer timer w <->
       previous_segment timer w <->
-      sob timer w
+      sob timer w <->
+      best_possible_time timer w
     ) </> subdivide_space Colors.default_bg w h 10
   )
 

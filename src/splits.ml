@@ -89,6 +89,14 @@ let updated_golds timer =
         {title = name; duration = dur}
       )
 
+let gold_sum timer start bound =
+  let gold_array = Array.slice (updated_golds timer) start bound in
+  Array.fold gold_array ~init:(Some 0) ~f:(fun sum gold ->
+      match sum, gold.duration with
+      | Some x, Some y -> Some (x + y)
+      | _ -> None
+    )
+
 let archived_split_time run split_num =
   if split_num < 0 then Some 0 else
     match run.comparison with
