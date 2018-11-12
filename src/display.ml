@@ -41,7 +41,9 @@ let splits_header width =
   let br = I.uchar Colors.label (Caml.Uchar.of_int 0x2500) width 1 in
   I.(padded <-> br)
 
-let time_color timer split_num =
+type time_status = Ahead_gain | Ahead_loss | Behind_gain | Behind_loss | Gold
+
+let time_status timer split_num =
   (*
   If this isn't the current split, check if segment is a gold
   else
@@ -49,22 +51,52 @@ let time_color timer split_num =
     Find amount we're ahead/behind by
     Find time ahead/behind by in last split possible
     If this isn't available
-      Colors.is either ahead gain or behind loss
+      Color is either ahead gain or behind loss
     else
       color depends on whether currently ahead and how lead/loss compares to last available lead/loss
   *)
 
-  if Splits.is_gold timer split_num then Colors.rainbow () else
+  if Splits.is_gold timer split_num then Gold else
     match Splits.ahead_by timer split_num with
-    | None -> Colors.ahead_gain
+    | None -> Ahead_gain
     | Some delta ->
       match Splits.ahead_by timer (split_num - 1) with
-      | None -> (if delta < 0 then Colors.ahead_gain else Colors.behind_loss)
+      | None -> (if delta < 0 then Ahead_gain else Behind_loss)
       | Some prev_delta -> (
           if delta < 0
-          then if delta < prev_delta then Colors.ahead_gain else Colors.ahead_loss
-          else if delta > prev_delta then Colors.behind_loss else Colors.behind_gain
+          then if delta < prev_delta then Ahead_gain else Ahead_loss
+          else if delta > prev_delta then Behind_loss else Behind_gain
         )
+
+let time_color timer split_num =
+  match time_status timer split_num with
+  | Ahead_gain -> Colors.ahead_gain
+  | Ahead_loss -> Colors.ahead_loss
+  | Behind_gain -> Colors.behind_gain
+  | Behind_loss -> Colors.behind_loss
+  | Gold -> Colors.rainbow ()
+
+let show_delta timer split_num =
+  (* if previous split or behind or 
+      (if gold available and segment time avail and seg slower than gold): 
+       show
+     else 
+       hide 
+  *)
+  match timer.state with
+  | Idle -> false
+  | Timing (splits, _) | Paused (splits, _, _) | Done (splits, _) ->
+    if split_num < Array.length splits then true else
+      (match time_status timer split_num with
+       | Behind_gain | Behind_loss -> true
+       | Ahead_gain | Ahead_loss | Gold ->
+         let sgmt = Splits.segment_time timer split_num in
+         let gold = timer.golds.(split_num).duration in
+         (match sgmt, gold with
+          | Some s, Some g -> s > g
+          | _ -> false
+         )
+      )
 
 let split_row timer width i =
   let bg_attr = match timer.state with
@@ -90,11 +122,13 @@ let split_row timer width i =
     else
       match Splits.ahead_by timer i with
       | None -> I.string uncolored_attr "-"
-      | Some delta ->
-        let time_str = Duration.to_string delta 1 in
-        let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
-        let color = A.(time_color timer i ++ bg_attr) in
-        I.string color time_str_sign
+      | Some delta -> (
+          if not (show_delta timer i) then I.string uncolored_attr "" else
+            let time_str = Duration.to_string delta 1 in
+            let time_str_sign = if delta >= 0 then "+" ^ time_str else time_str in
+            let color = A.(time_color timer i ++ bg_attr) in
+            I.string color time_str_sign
+        )
   in
 
   (* Compute the image of the split's segment time *)
