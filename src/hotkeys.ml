@@ -1,9 +1,11 @@
-open Core_kernel
+open Core
 
-type keypress = float * string
+type keypress = Time_ns.t * string
+
 type t = keypress Lwt_stream.t
 
-let python_detect_keys = {|
+let python_detect_keys =
+  {|
 import time
 import sys
 from pynput import keyboard
@@ -35,33 +37,35 @@ with keyboard.Listener(on_press=on_press) as listener:
 |}
 
 let stream_of_python python_src =
-  let cmd = "", [|"python3"; "-"|] in
+  let cmd = ("", [|"python3"; "-"|]) in
   let pipe_out_fd, pipe_out_fd_unix = Lwt_unix.pipe_out () in
   let () = Lwt_unix.set_close_on_exec pipe_out_fd_unix in
   let redir = `FD_move pipe_out_fd in
-
   let py_stream = Lwt_process.pread_lines ~stdin:redir cmd in
-
-  let%lwt n = Lwt_unix.write_string pipe_out_fd_unix python_src 0 (String.length python_src) in
-  if n < String.length python_src then failwith "Failed to write python to pipe" 
-  else 
+  let%lwt n =
+    Lwt_unix.write_string pipe_out_fd_unix python_src 0
+      (String.length python_src)
+  in
+  if n < String.length python_src then
+    failwith "Failed to write python to pipe"
+  else
     let%lwt () = Lwt_unix.close pipe_out_fd_unix in
     Lwt.return py_stream
 
 let make_stream () =
   let%lwt str_stream = stream_of_python python_detect_keys in
-  let stream = Lwt_stream.from (fun () ->
-      match%lwt Lwt_stream.get str_stream with
-      | Some str -> (
+  let stream =
+    Lwt_stream.from (fun () ->
+        match%lwt Lwt_stream.get str_stream with
+        | Some str -> (
           match String.split str ~on:' ' with
-          | time_str :: key_str :: [] -> 
-            Lwt.return (Some ((Float.of_string time_str), key_str))
-
-          | _ -> failwith "Invalid output from Python keypress server"
-
-        )
-      | None -> Lwt.return None
-    )
+          | [time_str; key_str] ->
+              let time =
+                Float.of_string time_str |> Time_ns.Span.of_sec
+                |> Time_ns.of_span_since_epoch
+              in
+              Lwt.return (Some (time, key_str))
+          | _ -> failwith "Invalid output from Python keypress server" )
+        | None -> Lwt.return None )
   in
-
   Lwt.return stream

@@ -1,16 +1,33 @@
-open Core_kernel
+open Core
 
-type t = int
+type t = Time_ns.Span.t [@@deriving sexp]
 
-let milli : t = 1
-let second : t = 1000
-let minute : t = second * 60
-let hour : t = minute * 60
-let day : t = hour * 60
+module Parts = struct
+  type t =
+    { sign: Sign.t
+    ; days: int
+    ; hours: int
+    ; minutes: int
+    ; seconds: int
+    ; millis: int }
+
+  let of_span span =
+    let parts = Time_ns.Span.to_parts span in
+    { sign= parts.sign
+    ; days= parts.hr / 24
+    ; hours= parts.hr % 24
+    ; minutes= parts.min
+    ; seconds= parts.sec
+    ; millis= parts.ms }
+
+  (* let to_span t =
+   *   Time_ns.Span.create ~day:t.days ~hr:t.hours ~min:t.minutes ~sec:t.seconds
+   *     ~ms:t.millis () *)
+end
 
 let compiled_re =
-  {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|}
-  |> Re.Perl.re |> Re.compile
+  {|^(?:(?:(?:(\d+):)?(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?$|} |> Re.Perl.re
+  |> Re.compile
 
 let string_valid = Re.execp compiled_re
 
@@ -21,91 +38,72 @@ let left_pad_zeros_char_list str size =
   prepend (String.to_list str) (size - String.length str)
 
 let left_pad_zeros size str =
-  left_pad_zeros_char_list str size
-  |> String.of_char_list
+  left_pad_zeros_char_list str size |> String.of_char_list
 
 let right_pad_zeros size str =
-  left_pad_zeros_char_list str size
-  |> List.rev
-  |> String.of_char_list
+  left_pad_zeros_char_list str size |> List.rev |> String.of_char_list
 
 let of_string str =
   match Re.exec_opt compiled_re str with
   | None -> None
   | Some groups ->
-    let group_strs = Re.Group.all groups in
+      let group_strs = Re.Group.all groups in
+      let to_int_default x =
+        if String.length x = 0 then 0 else Int.of_string x
+      in
+      let day = group_strs.(1) |> to_int_default in
+      let hr = group_strs.(2) |> to_int_default in
+      let min = group_strs.(3) |> to_int_default in
+      let sec = group_strs.(4) |> to_int_default in
+      let ms = group_strs.(5) |> right_pad_zeros 3 |> to_int_default in
+      Time_ns.Span.create ~day ~hr ~min ~sec ~ms () |> Option.some
 
-    let to_int_default x = if String.length x = 0 then 0 else Int.of_string x in
-
-    let days = group_strs.(1) |> to_int_default in
-    let hours = group_strs.(2) |> to_int_default in
-    let minutes = group_strs.(3) |> to_int_default in
-    let seconds = group_strs.(4) |> to_int_default in
-    let millis = group_strs.(5) |> right_pad_zeros 3 |> to_int_default in
-
-    Some (
-      day * days +
-      hour * hours +
-      minute * minutes +
-      second * seconds +
-      milli * millis
-    )
-
-let to_string_pos duration decimals =
-  let days = duration / day in
-  let duration_day = duration % day in
-
-  let hours = duration_day / hour in
-  let duration_hour = duration_day % hour in
-
-  let minutes = duration_hour / minute in
-  let duration_minute = duration_hour % minute in
-
-  let seconds = duration_minute / second in
-  let millis = duration_minute % second in
-
-  let millis_str = 
-    let zero_padded = left_pad_zeros 3 (Int.to_string millis) in
+let to_string_pos span decimals =
+  let duration = Parts.of_span span in
+  let open Time_ns.Span in
+  let ms_str =
+    let zero_padded = left_pad_zeros 3 (Int.to_string duration.millis) in
     String.prefix zero_padded decimals
   in
-  let seconds_str = 
-    let str = Int.to_string seconds in
-    if duration >= minute then left_pad_zeros 2 str else str
+  let sec_str =
+    let str = Int.to_string duration.seconds in
+    if span >= minute then left_pad_zeros 2 str else str
   in
-
-  let minutes_str =
-    if duration >= hour
-    then (Int.to_string minutes |> left_pad_zeros 2) ^ ":"
-    else if duration >= minute then Int.to_string minutes ^ ":" else ""
+  let min_str =
+    if span >= hour then
+      (Int.to_string duration.minutes |> left_pad_zeros 2) ^ ":"
+    else if span >= minute then Int.to_string duration.minutes ^ ":"
+    else ""
   in
-
-  let hours_str =
-    if duration >= day
-    then (Int.to_string hours |> left_pad_zeros 2) ^ ":"
-    else if duration >= hour then Int.to_string hours ^ ":" else ""
+  let hr_str =
+    if span >= day then
+      (Int.to_string duration.hours |> left_pad_zeros 2) ^ ":"
+    else if span >= hour then Int.to_string duration.hours ^ ":"
+    else ""
   in
+  let day_str =
+    if span >= day then Int.to_string duration.days ^ ":" else ""
+  in
+  String.concat [day_str; hr_str; min_str; sec_str; "."; ms_str]
 
-  let days_str = if duration >= day then Int.to_string days ^ ":" else "" in
+let to_string span decimals =
+  match Time_ns.Span.sign span with
+  | Pos | Zero -> to_string_pos span decimals
+  | Neg -> "-" ^ to_string_pos span decimals
 
-  String.concat [
-    days_str; 
-    hours_str;
-    minutes_str; 
-    seconds_str;
-    ".";
-    millis_str;
-  ]
+let to_string_plus span decimals =
+  let str = to_string span decimals in
+  match Time_ns.Span.sign span with Pos -> "+" ^ str | Neg | Zero -> str
 
-let to_string duration decimals =
-  if duration < 0 then "-" ^ to_string_pos (-duration) decimals
-  else to_string_pos duration decimals
+let between start finish = Time_ns.diff finish start
 
-let to_string_plus duration decimals =
-  let str = to_string duration decimals in
-  if duration >= 0 then "+" ^ str else str
+let since time = between time (Time_ns.now ())
 
-let between start finish =
-  (finish -. start) *. 1000. |> Int.of_float
+let zero = Time_ns.Span.zero
 
-let since time_float =
-  between time_float (Unix.gettimeofday ())
+let t_of_sexp = function
+  | Sexp.Atom s -> of_string s |> Option.value_exn
+  | _ as bad_sexp ->
+      Error.raise_s [%message "A duration must be an atom" (bad_sexp : Sexp.t)]
+
+let sexp_of_t duration = Sexp.Atom (to_string duration 3)
