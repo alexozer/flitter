@@ -60,18 +60,18 @@ let game_of_sexp sexp =
   if num_splits = 0 then of_sexp_error "No split names defined" sexp
   else
 
-    let check_run run =
+    let check_run run name =
       let pb_ok = match run with
         | Some r -> Array.length r.splits = num_splits
         | None -> true
       in
       if not pb_ok 
-      then of_sexp_error "Personal best has different number of splits than split_names" sexp
+      then of_sexp_error (name ^ " has different number of splits than split_names") sexp
       else ()
     in
 
-    check_run game.personal_best;
-    check_run game.world_record;
+    check_run game.personal_best "Personal best";
+    check_run game.world_record "World record";
 
     let history_runs_ok = List.fold game.history ~init:true ~f:(
         fun all_ok run -> all_ok && Array.length run.splits = num_splits
