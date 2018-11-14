@@ -1,5 +1,4 @@
 open Core
-open Timer_types
 
 module Game = struct
   type t =
@@ -89,7 +88,7 @@ let load filepath =
   ; splits_file = filepath }
 ;;
 
-let save (timer : Timer_types.Timer.t) =
+let save (timer : Timer.t) =
   let game =
     { Game.title = timer.title
     ; category = timer.category

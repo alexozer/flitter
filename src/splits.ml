@@ -1,5 +1,4 @@
 open Core
-open Timer_types
 
 let split_time (timer : Timer.t) ?now split_num =
   if split_num < 0

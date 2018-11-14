@@ -1,2 +1,2 @@
-val load : string -> Timer_types.Timer.t
-val save : Timer_types.Timer.t -> unit
+val load : string -> Timer.t
+val save : Timer.t -> unit

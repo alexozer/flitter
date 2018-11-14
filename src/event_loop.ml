@@ -1,8 +1,7 @@
 open Core
-open Timer_types
 
 type t =
-  { timer : Timer_types.Timer.t
+  { timer : Timer.t
   ; display : Display.t
   ; last_draw : float
   ; hotkeys_stream : Hotkeys.t }

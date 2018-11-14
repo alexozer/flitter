@@ -1,6 +1,5 @@
-open Core_kernel
+open Core
 open Notty
-open Timer_types
 
 let time_col_width = 10
 

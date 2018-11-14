@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Notty
 
 let big_font_map =
