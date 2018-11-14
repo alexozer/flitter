@@ -1,63 +1,35 @@
-((title     "Super Monkey Ball 2: Monkeyed Ball")
- (category  "Story Mode All Levels")
- (attempts  3322)
- (completed 35)
- (split_names (Green Apricot Blue Brown Pink))
- (golds (
-   ((title Green)   (duration 0.440))
-   ((title Apricot) (duration 0.255))
-   ((title Blue)    (duration 0.568))
-   ((title Brown)   (duration 0.264))
-   ((title Pink)    (duration 0.216))))
- (personal_best (
-   (attempt 3319)
-   (splits (
-     ((title Green)   (time 0.623) (is_gold false))
-     ((title Apricot) (time 2.391) (is_gold false))
-     ((title Blue)    (time 2.959) (is_gold true))
-     ((title Brown)   (time 3.311) (is_gold false))
-     ((title Pink)    (time 3.527) (is_gold true))))))
- (history (
-   ((attempt 3321)
-    (splits (
-      ((title Green)   (time 0.440) (is_gold true))
-      ((title Apricot) (time 2.760) (is_gold false))
-      ((title Blue)    (time 3.440) (is_gold false))
-      ((title Brown)   (time 4.440) (is_gold false))
-      ((title Pink)    (time 5.944) (is_gold false)))))
-   ((attempt 3320)
-    (splits (
-      ((title Green)   (time 0.552) (is_gold false))
-      ((title Apricot) (time 0.808) (is_gold true))
-      ((title Blue)    (time 2.496) (is_gold false))
-      ((title Brown)   (time 3.560) (is_gold false))
-      ((title Pink)    (time 3.984) (is_gold false)))))
-   ((attempt 3319)
-    (splits (
-      ((title Green)   (time 0.623) (is_gold false))
-      ((title Apricot) (time 2.391) (is_gold false))
-      ((title Blue)    (time 2.959) (is_gold true))
-      ((title Brown)   (time 3.311) (is_gold false))
-      ((title Pink)    (time 3.527) (is_gold true)))))
-   ((attempt 3318)
-    (splits (
-      ((title   Green)
-       (time    1.183)
-       (is_gold false))
-      ((title   Apricot)
-       (is_gold false))
-      ((title   Blue)
-       (time    5.144)
-       (is_gold false))
-      ((title   Brown)
-       (is_gold false))
-      ((title   Pink)
-       (time    6.431)
-       (is_gold false)))))
-   ((attempt 3315)
-    (splits (
-      ((title Green)   (time 1.823) (is_gold false))
-      ((title Apricot) (time 5.143) (is_gold false))
-      ((title Blue)    (time 6.823) (is_gold false))
-      ((title Brown)   (time 8.415) (is_gold false))
-      ((title Pink)    (time 8.855) (is_gold true))))))))
+((title "Super Monkey Ball 2: Monkeyed Ball")
+ (category "Story Mode All Levels")
+ (attempts 3315)
+ (completed 30)
+ (split_names 
+   (
+    Green
+    Apricot
+    Blue
+    Brown
+    Pink
+    ))
+
+ (personal_best 
+   (
+    (attempt 3300)
+    (splits 
+      (
+       ((title Green) (time 2) (is_gold false))
+       ((title Apricot) (time 4) (is_gold false))
+       ((title Blue) (time 6) (is_gold false))
+       ((title Brown) (time 8) (is_gold false))
+       ((title Pink) (time 10) (is_gold false))
+       ))
+    )
+   )
+
+   (golds (
+     ((title Green) (duration 1))
+     ((title Apricot) (duration 1))
+     ((title Blue) (duration 1))
+     ((title Brown) (duration 1))
+     ((title Pink) (duration 1))
+     )
+   ))
