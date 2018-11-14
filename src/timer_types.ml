@@ -2,19 +2,24 @@ open Core
 
 module Split = struct
   type t =
-    { title: string
-    ; time: Duration.t sexp_option
-    ; is_gold: bool [@default false] }
+    { title : string
+    ; time : Duration.t sexp_option
+    ; is_gold : bool [@default false] }
   [@@deriving fields, sexp]
 end
 
 module Gold = struct
-  type t = {title: string; duration: Duration.t sexp_option}
+  type t =
+    { title : string
+    ; duration : Duration.t sexp_option }
   [@@deriving fields, sexp]
 end
 
 module Archived_run = struct
-  type t = {attempt: int; splits: Split.t list} [@@deriving fields, sexp]
+  type t =
+    { attempt : int
+    ; splits : Split.t list }
+  [@@deriving fields, sexp]
 end
 
 module Live_splits = struct
@@ -38,17 +43,17 @@ end
    it doesn't make sense to further subdivide the state or abstract its contents away. *)
 module Timer = struct
   type t =
-    { title: string
-    ; category: string
-    ; attempts: int
-    ; completed: int
-    ; split_names: string list
-    ; golds: Gold.t list
-    ; history: Archived_run.t list
-    ; comparison: Archived_run.t option
-    ; pb: Archived_run.t option
-    ; wr: Archived_run.t option
-    ; state: Timer_state.t
-    ; splits_file: string }
+    { title : string
+    ; category : string
+    ; attempts : int
+    ; completed : int
+    ; split_names : string list
+    ; golds : Gold.t list
+    ; history : Archived_run.t list
+    ; comparison : Archived_run.t option
+    ; pb : Archived_run.t option
+    ; wr : Archived_run.t option
+    ; state : Timer_state.t
+    ; splits_file : string }
   [@@deriving fields]
 end
