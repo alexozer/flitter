@@ -2,7 +2,8 @@
   (name flitter)
   (wrapped false)
   (libraries core lwt.unix async notty notty.unix re color sexp_pretty)
-  (preprocess (pps lwt_ppx ppx_jane ppx_sexp_conv))
+  (preprocess (pps lwt_ppx ppx_jane ppx_expect ppx_sexp_conv))
+  (inline_tests)
   )
 
 ; vim:ft=scheme

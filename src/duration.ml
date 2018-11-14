@@ -21,9 +21,17 @@ module Parts = struct
     ; millis = parts.ms }
   ;;
 
-  (* let to_span t =
-   *   Time_ns.Span.create ~day:t.days ~hr:t.hours ~min:t.minutes ~sec:t.seconds
-   *     ~ms:t.millis () *)
+  let to_span t =
+    Time_ns.Span.create
+      ~day:t.days
+      ~hr:t.hours
+      ~min:t.minutes
+      ~sec:t.seconds
+      ~ms:t.millis
+      ()
+  ;;
+
+  let _ = to_span
 end
 
 let compiled_re =
@@ -112,3 +120,26 @@ let t_of_sexp = function
 ;;
 
 let sexp_of_t duration = Sexp.Atom (to_string duration 3)
+
+let%expect_test "basic" =
+  Time_ns.Span.of_string "5.5s" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "4m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "47m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "99m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "923534269ms" |> sexp_of_t |> print_s;
+  [%expect
+    {|
+    5.500
+    4:00.000
+    47:00.000
+    1:39:00.000
+    10:16:32:14.269 |}]
+;;
+
+let%expect_test "between" =
+  let start = Time_ns.of_string "2018-11-13 22:40:46.547623-05:00" in
+  let finish = Time_ns.of_string "2018-11-13 22:41:53.547623-05:00" in
+  let diff = between start finish in
+  to_string diff 3 |> print_endline;
+  [%expect {| 1:07.000 |}]
+;;

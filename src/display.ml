@@ -158,7 +158,9 @@ let split_row (timer : Timer.t) width i =
     then Splits.archived_split_time timer i
     else Splits.split_time timer i
   in
-  let time_str = match time with Some t -> Duration.to_string t 1 | None -> "-" in
+  let time_str =
+    Option.value_map time ~default:"-" ~f:(fun t -> Duration.to_string t 1)
+  in
   let time_image = I.string uncolored_attr time_str in
   (* Compute the image of the WR comparison cell *)
   let wr_image =
