@@ -72,6 +72,7 @@ let of_string str =
 let to_string_pos span decimals =
   let duration = Parts.of_span span in
   let open Time_ns.Span in
+  let span = abs span in
   let ms_str =
     let zero_padded = left_pad_zeros 3 (Int.to_string duration.millis) in
     String.prefix zero_padded decimals
@@ -127,13 +128,23 @@ let%expect_test "basic" =
   Time_ns.Span.of_string "47m" |> sexp_of_t |> print_s;
   Time_ns.Span.of_string "99m" |> sexp_of_t |> print_s;
   Time_ns.Span.of_string "923534269ms" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "-5.5s" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "-4m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "-47m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "-99m" |> sexp_of_t |> print_s;
+  Time_ns.Span.of_string "-923534269ms" |> sexp_of_t |> print_s;
   [%expect
     {|
     5.500
     4:00.000
     47:00.000
     1:39:00.000
-    10:16:32:14.269 |}]
+    10:16:32:14.269
+    -5.500
+    -4:00.000
+    -47:00.000
+    -1:39:00.000
+    -10:16:32:14.269 |}]
 ;;
 
 let%expect_test "between" =
@@ -141,5 +152,13 @@ let%expect_test "between" =
   let finish = Time_ns.of_string "2018-11-13 22:41:53.547623-05:00" in
   let diff = between start finish in
   to_string diff 3 |> print_endline;
-  [%expect {| 1:07.000 |}]
+  Time_ns.Span.to_string diff |> print_endline;
+  let diff = between finish start in
+  to_string diff 3 |> print_endline;
+  Time_ns.Span.to_string diff |> print_endline;
+  [%expect {|
+    1:07.000
+    1.11667m
+    -1:07.000
+    -1.11667m |}]
 ;;
