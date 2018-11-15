@@ -8,6 +8,10 @@ let run_event_loop timer =
   let%lwt event_loop = Event_loop.make timer in
   Event_loop.loop event_loop
 
+let run_one_loop timer = 
+  let%lwt event_loop = Event_loop.make timer in
+  Event_loop.run_once event_loop
+
 let run () =
   match Sys.argv with
   | [|_; path|] ->
