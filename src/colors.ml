@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Notty
 
 let color_of_hexstring str =
@@ -7,17 +7,17 @@ let color_of_hexstring str =
   | Some color ->
     let rgba = Color.to_rgba color in
     A.rgb_888 ~r:rgba.r ~g:rgba.g ~b:rgba.b
+;;
 
 let color_of_hsl h s l =
   let hsl = Color.of_hsl h s l in
   let rgba = Color.to_rgba hsl in
   A.rgb_888 ~r:rgba.r ~g:rgba.g ~b:rgba.b
+;;
 
-let default_bg = A.(bg (color_of_hexstring "#2f3542")) 
-let selection_bg = A.(bg (color_of_hexstring "#485460")) 
-
-let attr_of_hexstring str =
-  A.(fg (color_of_hexstring str) ++ default_bg)
+let default_bg = A.(bg (color_of_hexstring "#2f3542"))
+let selection_bg = A.(bg (color_of_hexstring "#485460"))
+let attr_of_hexstring str = A.(fg (color_of_hexstring str) ++ default_bg)
 
 (* https://flatuicolors.com/palette/cn *)
 (* TODO Find better color palette *)
@@ -34,3 +34,4 @@ let rainbow () =
   let h = Float.mod_float (Unix.gettimeofday ()) period /. period *. 360. in
   let rb = color_of_hsl h 1. 0.7 in
   A.(fg rb ++ default_bg ++ st bold)
+;;
