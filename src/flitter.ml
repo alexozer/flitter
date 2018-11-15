@@ -9,7 +9,7 @@ let run_event_loop timer =
   Event_loop.loop event_loop
 
 let run_one_loop timer = 
-  let%lwt event_loop = Event_loop.make timer in
+  let%lwt event_loop = Event_loop.make ~disable_python:() timer in
   Event_loop.run_once event_loop
 
 let run () =

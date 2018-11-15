@@ -48,20 +48,23 @@ let stream_of_python python_src =
     let%lwt () = Lwt_unix.close pipe_out_fd_unix in
     Lwt.return py_stream
 
-let make_stream () =
-  let%lwt str_stream = stream_of_python python_detect_keys in
-  let stream = Lwt_stream.from (fun () ->
-      match%lwt Lwt_stream.get str_stream with
-      | Some str -> (
-          match String.split str ~on:' ' with
-          | time_str :: key_str :: [] -> 
-            Lwt.return (Some ((Float.of_string time_str), key_str))
+let make_stream ?disable_python () =
+  match disable_python with
+  | Some () -> Lwt_stream.create () |> fst  |> Lwt.return
+  | None -> 
+    let%lwt str_stream = stream_of_python python_detect_keys in
+    let stream = Lwt_stream.from (fun () ->
+        match%lwt Lwt_stream.get str_stream with
+        | Some str -> (
+            match String.split str ~on:' ' with
+            | time_str :: key_str :: [] -> 
+              Lwt.return (Some ((Float.of_string time_str), key_str))
 
-          | _ -> failwith "Invalid output from Python keypress server"
+            | _ -> failwith "Invalid output from Python keypress server"
 
-        )
-      | None -> Lwt.return None
-    )
-  in
+          )
+        | None -> Lwt.return None
+      )
+    in
 
-  Lwt.return stream
+    Lwt.return stream
