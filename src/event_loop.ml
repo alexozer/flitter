@@ -159,3 +159,8 @@ let loop flitter =
   in
   loop' flitter
 ;;
+
+let run_once flitter =
+  let%lwt _ = draw_event flitter in
+  Display.close flitter.display;
+  Lwt.return ()
