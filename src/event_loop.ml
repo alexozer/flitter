@@ -138,8 +138,8 @@ let rec handle_events flitter events =
   | [] -> flitter
 ;;
 
-let make timer =
-  let%lwt hotkeys_stream = Hotkeys.make_stream () in
+let make ?disable_python timer =
+  let%lwt hotkeys_stream = Hotkeys.make_stream ?disable_python () in
   Lwt.return
     { timer
     ; display = Display.make ()
@@ -164,3 +164,4 @@ let run_once flitter =
   let%lwt _ = draw_event flitter in
   Display.close flitter.display;
   Lwt.return ()
+;;
