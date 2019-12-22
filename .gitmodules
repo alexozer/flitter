@@ -1,3 +1,3 @@
 [submodule "lib/notty"]
 	path = vendor/notty
-	url = https://github.com/alexozer/notty
+	url = https://github.com/pqwy/notty
