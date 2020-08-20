@@ -24,11 +24,6 @@ let left_pad_zeros size str =
   left_pad_zeros_char_list str size
   |> String.of_char_list
 
-let right_pad_zeros size str =
-  left_pad_zeros_char_list str size
-  |> List.rev
-  |> String.of_char_list
-
 let of_string str =
   match Re.exec_opt compiled_re str with
   | None -> None
@@ -41,7 +36,7 @@ let of_string str =
     let hours = group_strs.(2) |> to_int_default in
     let minutes = group_strs.(3) |> to_int_default in
     let seconds = group_strs.(4) |> to_int_default in
-    let millis = group_strs.(5) |> right_pad_zeros 3 |> to_int_default in
+    let millis = group_strs.(5) |> left_pad_zeros 3 |> to_int_default in
 
     Some (
       day * days +
