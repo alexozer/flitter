@@ -31,8 +31,8 @@ Set up opam and install OCaml dependencies:
 
 ```bash
 $ opam init
-$ opam switch 4.07.0
-$ opam install dune core lwt re color sexp_pretty
+$ opam switch create 4.07.0
+$ opam install dune core lwt re color sexp_pretty uutf lwt_ppx uuseg notty
 ```
 
 ### Python Dependencies
