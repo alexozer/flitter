@@ -4,34 +4,62 @@ type keypress = float * string
 type t = keypress Lwt_stream.t
 
 let python_detect_keys = {|
-import time
-import sys
-from pynput import keyboard
+from asyncio import sleep, gather, run, set_event_loop, new_event_loop
+from evdev import InputDevice, ecodes, list_devices
+import json
+from sys import exit
+from time import time
 
+keymap = {"KEY_SPACE":    "start-split-reset",
+          "KEY_J":        "start-split",
+          "KEY_K":        "undo",
+          "KEY_D":        "delete-last",
+          "KEY_BACKSPACE":"pause-reset",
+          "KEY_DELETE":   "pause-delete",
+          "KEY_Q":        "quit"
+#         "device":       "Secondary Device Name"
+         }
+keymap_override = 'keymap.json'
 
-def on_press(key):
-    try:
-        t = time.time()
-        try:
-            # Alphanumeric key pressed
-            print('{} {}'.format(t, key.char), flush=True)
-        except AttributeError:
-            # Special key pressed
-            key_name = str(key)[4:] # Strip "Key."
-            print('{} {}'.format(t, key_name), flush=True)
-    except:
-        sys.exit(0)
+async def listen(device, mapping):
+    """Handle press events from the device, with the given key mapping."""
+    async for event in device.async_read_loop():
+        if (event.value == 1) and (event.code in mapping):
+            print( f"{event.sec}.{event.usec} {mapping[event.code]}", flush=True )
 
-# Collect events until released
-with keyboard.Listener(on_press=on_press) as listener:
-    try:
-        while True:
-            t = time.time()
-            print('{} heartbeat'.format(t))
-            time.sleep(1)
-    except:
-        sys.exit(0)
-    listener.join()
+async def heartbeat():
+    """Periodically print a heartbeat."""
+    while True:
+        await sleep(1)
+        print( f"{time()} heartbeat", flush=True )
+
+async def main( devices, mapping ):
+    """Call this to run both the heartbeat and listeners at once."""
+    listeners = [listen(dev, mapping) for dev in devices]
+    await gather( *listeners, heartbeat() )
+
+def translate_map( mapping ):
+    """Convert text labels to evdev codes."""
+    return {ecodes.ecodes[key]:mapping[key] for key in mapping if key in ecodes.ecodes}
+
+# load an external map, if possible
+try:
+    with open( keymap_override, 'rt' ) as file:
+        keymap = json.load( file )
+except:
+    pass
+
+devices = [InputDevice(path) for path in list_devices()]
+if 'device' in keymap:
+    devices = [dev for dev in devices if keymap['device'] in dev.name]
+mapping = translate_map( keymap )
+
+try:
+    run( main( devices, mapping ) )
+except:
+    # the event loop is invalid on Control-C, replace it
+    set_event_loop(new_event_loop())
+    exit(0)
 |}
 
 let stream_of_python python_src =
