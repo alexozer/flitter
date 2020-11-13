@@ -76,7 +76,7 @@ $ flitter my-splits.scm
 
 ### Keybindings
 
-Keybindings are all global hotkeys; they will work even when the terminal is not focused.
+Keybindings are all global hotkeys; they will work even when the terminal is not focused. Here are the defaults:
 
 | Keys        | Action                                              |
 | ----------- | --------------------------------------------------- |
@@ -87,6 +87,25 @@ Keybindings are all global hotkeys; they will work even when the terminal is not
 | `Backspace` | Pause / reset (save run if finished and save golds) |
 | `Delete`    | Pause / delete run (don't save anything)            |
 | `Q`         | Quit (if not currently timing)                      |
+
+You can modify these by placing a file named "keymap.json" in the working directory; check the examples for an alternate keymap that uses the number pad. This file also allows you to create a filter so that only buttons from a specific device count. Say, for instance, you're running a game that doesn't use the mouse at all. Binding Flitter to mouse buttons seems like a great idea, until you alt-Tab away to chat. Thanks to this filter, you can now do the following:
+
+1. Plug in a second mouse.
+2. Run `egrep '^N:' /proc/bus/input/devices` to find the name of this new device. Let's say it's "Logitech Wireless Mouse PID:1024".
+3. Put the following in "keymap.json":
+
+```
+{
+  "BTN_MIDDLE":"start-stop-reset",
+  "BTN_LEFT":  "pause-reset",
+  "BTN_RIGHT": "undo",
+  "device":    "Logitech Wireless Mouse"
+}
+```
+
+4. Securely tape the mouse to the floor in front of your chair.
+
+This is a poor person's foot pedal: you control Flitter by tapping the appropriate button with your big toe, yet Flitter won't activate when you alt-Tab away from the game and start clicking around with your main mouse. Note that Flitter only checks if the target string is present in the device name. This allows you to be lazy ("Logitech" would also work if I only had one Logitech device) or creative (any and all devices with a specific brand name will control Flitter).
 
 ## Contributing
 
