@@ -46,6 +46,9 @@ devices = [InputDevice(path) for path in list_devices()]
 if 'device' in keymap_evdev:
   devices = [dev for dev in devices if keymap_evdev['device'] in dev.name]
 
+for dev in devices:
+    print( f"DEVICE: {dev.name}", flush=True )
+
 async def listen(device, mapping):
   """Handle press events from the device, with the given key mapping."""
   async for event in device.async_read_loop():

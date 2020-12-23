@@ -10,6 +10,9 @@ import json
 from sys import exit
 from time import time
 
+import logging
+logging.basicConfig(filename='flitter.python.log', level=logging.DEBUG)
+
 async def heartbeat():
   """Periodically print a heartbeat."""
   while True:
@@ -19,7 +22,6 @@ async def heartbeat():
 async def main( listeners ):
   """Launch the main loop."""
   await gather( *listeners, heartbeat() )
-
 
 keymap_pynput = {
   "space":    "start-split-reset",
@@ -67,6 +69,8 @@ if (find_spec('evdev') != None) and ((type(keys[0]) is dict) or (keys[1] is None
   else:
     keymap = translate( keymap_evdev )
 
+  logging.debug( f"keymap = {keymap}" )
+
   devices = [InputDevice(path) for path in list_devices()]
   if 'device' in keymap:
     devices = [dev for dev in devices if keymap['device'] in dev.name]
@@ -97,6 +101,8 @@ else:
   else:
     keymap = keymap_pynput
 
+  logging.debug( f"keymap = {keymap}" )
+
   async def listen_keys( mapping ):
     """Handle pynput's keyboard output."""
 
@@ -107,7 +113,7 @@ else:
         elif (type(event.key) == keyboard._xorg.KeyCode) and (event.key.char in mapping):
           print( f'{time()} {mapping[event.key.char]}', flush=True )
 
- async def listen_mouse( mapping ):
+  async def listen_mouse( mapping ):
     """Handle pynput's mouse output."""
 
     async for event in async_wrapper( mouse ):
