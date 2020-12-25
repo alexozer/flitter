@@ -1,0 +1,9 @@
+{
+ "KEY_KPENTER":"start-split-reset",
+ "KEY_ENTER":  "start-split-reset",
+ "KEY_KPPLUS": "undo",
+ "KEY_KPMINUS":"delete-last",
+ "KEY_KP0":    "pause-reset",
+ "KEY_KPDOT":  "pause-delete",
+ "KEY_KPSLASH":"quit"
+}
