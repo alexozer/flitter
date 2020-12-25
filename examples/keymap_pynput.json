@@ -1,4 +1,5 @@
 {
- "mouse:right":"start-split-reset",
- "mouse:middle": "undo"
+ "mouse:right"  : "start-split-reset",
+ "mouse:middle" : "undo",
+ "q"            : "quit"
 }

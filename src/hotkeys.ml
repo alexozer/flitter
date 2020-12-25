@@ -10,9 +10,6 @@ import json
 from sys import exit
 from time import time
 
-import logging
-logging.basicConfig(filename='flitter.python.log', level=logging.DEBUG)
-
 async def heartbeat():
   """Periodically print a heartbeat."""
   while True:
@@ -69,8 +66,6 @@ if (find_spec('evdev') != None) and ((type(keys[0]) is dict) or (keys[1] is None
   else:
     keymap = translate( keymap_evdev )
 
-  logging.debug( f"keymap = {keymap}" )
-
   devices = [InputDevice(path) for path in list_devices()]
   if 'device' in keymap:
     devices = [dev for dev in devices if keymap['device'] in dev.name]
@@ -96,12 +91,11 @@ else:
           await sleep(0.005)
         else:
           yield event
+
   if type(keys[1]) is dict:
     keymap = keys[1]
   else:
     keymap = keymap_pynput
-
-  logging.debug( f"keymap = {keymap}" )
 
   async def listen_keys( mapping ):
     """Handle pynput's keyboard output."""
