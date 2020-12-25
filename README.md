@@ -65,7 +65,7 @@ As mentioned above, for `evdev` you have two choices. The simplest of the two is
 $ sudo usermod -G input -a $USER
 ```
 
-and logging out then back in will do the trick. This *also* creates a security problem, as now any program executed with your uid could read every key you press (and if the default permissions allow writing, they could also inject keypresses and mouse movements). There is no solution involving `evdev` that doesn't create one of these two security holes, as far as we're aware. Incidentally, Xlib has the same security issues.
+and logging out then back in will do the trick. This *also* creates a security problem, as now any program executed with your uid could read every key you press (and if the default permissions allow writing, it could also inject keypresses and mouse movements). There is no solution involving `evdev` that doesn't create one of these two security holes, as far as we're aware. Incidentally, Xlib has the same security issues.
 
 ### Install Flitter
 
