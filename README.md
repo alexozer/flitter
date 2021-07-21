@@ -56,8 +56,8 @@ $ pip3 install --user pynput
 ```bash
 $ git clone --recursive https://github.com/alexozer/flitter.git
 $ cd flitter
-$ dune build
-$ dune install
+$ opam exec dune build
+$ opam exec dune install
 ```
 
 ## Usage
