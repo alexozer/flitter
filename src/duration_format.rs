@@ -1,3 +1,4 @@
+use regex::Regex;
 use serde::{de, Deserializer, Serializer};
 use std::str::FromStr;
 use std::sync::LazyLock;
@@ -15,8 +16,8 @@ where
     serializer.serialize_str(&s)
 }
 
-static DURATION_REGEX: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r"^(\d+):(\d{2})\.(\d{3})$").unwrap());
+static DURATION_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\d+):(\d{2})\.(\d{3})$").unwrap());
 
 pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
