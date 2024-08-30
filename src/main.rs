@@ -1,8 +1,11 @@
 use anyhow::{anyhow, Context};
-use std::path::PathBuf;
+use global_hotkey::{
+    hotkey::{Code, HotKey, Modifiers},
+    GlobalHotKeyEvent, GlobalHotKeyManager,
+};
+use std::{path::PathBuf, thread, time::Duration};
 
-mod duration_format;
-mod split_set;
+mod split_file;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -12,9 +15,9 @@ fn main() -> anyhow::Result<()> {
 
     let path = PathBuf::from(&args[1]);
 
-    let split_set = split_set::read_split_set(&path).context("Failed to read splits file")?;
+    let split_set = split_file::read_split_set(&path).context("Failed to read splits file")?;
     println!("{:?}", split_set);
-    split_set::write_split_set(&split_set, &path)?;
+    split_file::write_split_set(&split_set, &path)?;
 
     Ok(())
 }
