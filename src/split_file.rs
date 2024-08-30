@@ -5,7 +5,7 @@ use std::path::Path;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct SplitSet {
+pub(crate) struct SplitFile {
     title: String,
     category: String,
     attempts: u32,
@@ -111,14 +111,14 @@ mod duration_format {
     }
 }
 
-pub fn read_split_set(path: &Path) -> anyhow::Result<SplitSet> {
+pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     let file = std::fs::File::open(path)?;
     let reader = std::io::BufReader::new(file);
-    let split_set: SplitSet = serde_json::from_reader(reader)?;
+    let split_set: SplitFile = serde_json::from_reader(reader)?;
     Ok(split_set)
 }
 
-pub fn write_split_set(split_set: &SplitSet, path: &Path) -> anyhow::Result<()> {
+pub fn write_split_set(split_set: &SplitFile, path: &Path) -> anyhow::Result<()> {
     let file = std::fs::File::create(path)?;
     serde_json::to_writer_pretty(file, split_set)?;
     Ok(())

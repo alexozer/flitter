@@ -9,3 +9,4 @@ global-hotkey = "0.6.0"
 regex = "1.10.6"
 serde = { version = "1.0.209", features = ["derive"] }
 serde_json = "1.0.127"
+winit = "0.30.5"
