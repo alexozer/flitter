@@ -1,6 +1,8 @@
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::Context;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::render::Renderer;
@@ -21,26 +23,29 @@ impl Timer {
         })
     }
 
-    pub fn update(&mut self, delta_seconds: f32) -> bool {
-        let keys = self.device_state.get_keys();
-        if keys.contains(&Keycode::Q) {
-            return false;
+    pub fn update(&mut self, delta_seconds: f32) -> anyhow::Result<bool> {
+        if read_chars()?.contains(&'q') {
+            return Ok(false);
         }
         self.renderer.render().unwrap();
-        true
+        Ok(true)
     }
 }
 
-// pub fn read_char() -> std::io::Result<char> {
-//     loop {
-//         if let Ok(Event::Key(KeyEvent {
-//             code: KeyCode::Char(c),
-//             kind: KeyEventKind::Press,
-//             modifiers: _,
-//             state: _,
-//         })) = event::read()
-//         {
-//             return Ok(c);
-//         }
-//     }
-// }
+fn read_chars() -> anyhow::Result<Vec<char>> {
+    let mut input_chars = Vec::new();
+
+    while event::poll(Duration::from_secs(0))? {
+        if let Event::Key(KeyEvent {
+            code: KeyCode::Char(c),
+            kind: KeyEventKind::Press,
+            modifiers: _,
+            state: _,
+        }) = event::read()?
+        {
+            input_chars.push(c);
+        }
+    }
+
+    Ok(input_chars)
+}

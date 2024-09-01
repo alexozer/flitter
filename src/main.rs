@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
     loop {
         let start_instant = time::Instant::now();
         let delta_seconds = target_frame_time.max(frame_time).as_secs_f32();
-        if !timer.update(delta_seconds) {
+        if !timer.update(delta_seconds)? {
             break;
         }
 

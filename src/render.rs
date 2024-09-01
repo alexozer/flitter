@@ -4,7 +4,7 @@ use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute, queue, style,
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
-    QueueableCommand,
+    ExecutableCommand, QueueableCommand,
 };
 use std::io::{stdout, Stdout, Write};
 
@@ -41,35 +41,23 @@ impl Renderer {
 
     pub fn render(&mut self) -> anyhow::Result<()> {
         if !self.initialized {
-            execute!(self.stdout, EnterAlternateScreen)?;
+            self.stdout.execute(EnterAlternateScreen)?;
             terminal::enable_raw_mode()?;
+            self.initialized = true;
         }
-        queue!(
-            self.stdout,
-            style::ResetColor,
-            terminal::Clear(ClearType::All),
-            cursor::Hide,
-            cursor::MoveTo(1, 1),
-        )?;
+        self.stdout
+            .execute(style::ResetColor)?
+            .execute(terminal::Clear(ClearType::All))?
+            .execute(cursor::Hide)?
+            .execute(cursor::MoveTo(1, 1))?;
 
         for line in MENU.split("\n") {
-            queue!(self.stdout, style::Print(line), cursor::MoveToNextLine(1))?;
+            self.stdout
+                .queue(style::Print(line))?
+                .queue(cursor::MoveToNextLine(1))?;
         }
 
         self.stdout.flush()?;
-
-        match read_char()? {
-            // '1' => test::cursor::run(w)?,
-            // '2' => test::color::run(w)?,
-            // '3' => test::attribute::run(w)?,
-            // '4' => test::event::run(w)?,
-            // '5' => test::synchronized_output::run(w)?,
-            'q' => {
-                execute!(self.stdout, cursor::SetCursorStyle::DefaultUserShape).unwrap();
-                return Err(anyhow!("Exiting loop"));
-            }
-            _ => {}
-        };
 
         Ok(())
     }
