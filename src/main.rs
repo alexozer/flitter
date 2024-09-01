@@ -7,6 +7,7 @@ use std::{
 use anyhow::{anyhow, Context};
 use timer::Timer;
 
+mod render;
 mod split_file;
 mod timer;
 
@@ -26,7 +27,9 @@ fn main() -> anyhow::Result<()> {
     loop {
         let start_instant = time::Instant::now();
         let delta_seconds = target_frame_time.max(frame_time).as_secs_f32();
-        timer.update(delta_seconds);
+        if !timer.update(delta_seconds) {
+            break;
+        }
 
         frame_time = start_instant.elapsed();
         if frame_time < target_frame_time {
