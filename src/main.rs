@@ -8,6 +8,7 @@ use anyhow::{anyhow, Context};
 use timer::Timer;
 
 mod render;
+mod rotty;
 mod split_file;
 mod timer;
 
