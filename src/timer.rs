@@ -3,10 +3,11 @@ use std::time::Duration;
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::style;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::{
-    rotty::{Image, Renderer, TextAlign},
+    rotty::{Block, Image, Renderer, TextAlign},
     split_file::{read_split_file, SplitFile},
 };
 
@@ -29,8 +30,12 @@ impl Timer {
         if read_chars()?.contains(&'q') {
             return Ok(false);
         }
-        self.renderer
-            .render(&Image::new("Hi there", 20, TextAlign::Left).build())?;
+        let line1 = Image::new("Hello, world!", 20, TextAlign::Left).build();
+        let line2 = Image::new("Goodbye, world!", 20, TextAlign::Right)
+            .fg_color(style::Color::Red)
+            .build();
+        let vert = line1.vert(line2);
+        self.renderer.render(&vert)?;
         Ok(true)
     }
 }
