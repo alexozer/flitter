@@ -104,22 +104,23 @@ impl Renderer {
 
         let fg_color = image.fg_color.unwrap_or(self.default_fg_color);
         let bg_color = image.bg_color.unwrap_or(self.default_bg_color);
-        if fg_color != self.last_fg_color {
+
+        if fg_color != self.last_fg_color
+            || bg_color != self.last_bg_color
+            || image.attrs != self.last_attrs
+        {
+            // Set all of these together, because style::Attribute::Reset also resets colors
             self.stdout
+                .queue(style::SetAttribute(style::Attribute::Reset))
+                .unwrap()
                 .queue(style::SetForegroundColor(fg_color))
-                .unwrap();
-            self.last_fg_color = fg_color;
-        }
-        if bg_color != self.last_bg_color {
-            self.stdout
+                .unwrap()
                 .queue(style::SetBackgroundColor(bg_color))
-                .unwrap();
-            self.last_bg_color = bg_color;
-        }
-        if image.attrs != self.last_attrs {
-            self.stdout
+                .unwrap()
                 .queue(style::SetAttributes(image.attrs))
                 .unwrap();
+            self.last_fg_color = fg_color;
+            self.last_bg_color = bg_color;
             self.last_attrs = image.attrs;
         }
 
