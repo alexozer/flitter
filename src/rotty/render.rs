@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use crossterm::{
     cursor::{self, RestorePosition, SavePosition},
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
@@ -66,21 +66,22 @@ impl Renderer {
         self.last_bg_color = self.default_bg_color;
         self.last_attrs = style::Attributes::none();
 
-        self.render_block(block, Point { x: 0, y: 0 });
+        self.render_block(block, Point { x: 0, y: 0 })
+            .context("Failed to render block")?;
 
         self.stdout.flush()?;
 
         Ok(())
     }
 
-    fn render_block(&mut self, block: &Block, top_left: Point) -> AABB {
+    fn render_block(&mut self, block: &Block, top_left: Point) -> anyhow::Result<AABB> {
         match block {
             Block::Image(image) => self.render_image(image, top_left),
             Block::Join { dir, blocks } => self.render_join(dir, blocks, top_left),
         }
     }
 
-    fn render_image(&mut self, image: &Image, top_left: Point) -> AABB {
+    fn render_image(&mut self, image: &Image, top_left: Point) -> anyhow::Result<AABB> {
         let chars = image.text.chars().collect::<Vec<char>>();
 
         // Calculate text start based on alignment
@@ -129,7 +130,7 @@ impl Renderer {
             .queue(style::Print(&image.text))
             .unwrap();
 
-        AABB {
+        Ok(AABB {
             top_left: Point {
                 x: top_left.x,
                 y: top_left.y,
@@ -138,10 +139,15 @@ impl Renderer {
                 x: image.width,
                 y: 1,
             },
-        }
+        })
     }
 
-    fn render_join(&mut self, dir: &JoinDir, blocks: &Vec<Block>, top_left: Point) -> AABB {
+    fn render_join(
+        &mut self,
+        dir: &JoinDir,
+        blocks: &Vec<Block>,
+        top_left: Point,
+    ) -> anyhow::Result<AABB> {
         let mut aabb = AABB {
             top_left,
             size: Point { x: 0, y: 0 },
@@ -153,7 +159,7 @@ impl Renderer {
                         x: aabb.top_left.x + aabb.size.x,
                         y: aabb.top_left.y,
                     };
-                    let sub_aabb = self.render_block(b, render_pos);
+                    let sub_aabb = self.render_block(b, render_pos)?;
                     aabb.size.x += sub_aabb.size.x;
                     aabb.size.y = aabb.size.y.max(sub_aabb.size.y);
                 }
@@ -162,19 +168,19 @@ impl Renderer {
                         x: aabb.top_left.x,
                         y: aabb.top_left.y + aabb.size.y,
                     };
-                    let sub_aabb = self.render_block(b, render_pos);
+                    let sub_aabb = self.render_block(b, render_pos)?;
                     aabb.size.x = aabb.size.x.max(sub_aabb.size.x);
                     aabb.size.y += sub_aabb.size.y;
                 }
                 JoinDir::Stack => {
                     let render_pos = aabb.top_left;
-                    let sub_aabb = self.render_block(b, render_pos);
+                    let sub_aabb = self.render_block(b, render_pos)?;
                     aabb.size.x = aabb.size.x.max(sub_aabb.size.x);
                     aabb.size.y = aabb.size.y.max(sub_aabb.size.y);
                 }
             }
         }
-        aabb
+        Ok(aabb)
     }
 }
 

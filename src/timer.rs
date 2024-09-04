@@ -30,9 +30,12 @@ impl Timer {
         if read_chars()?.contains(&'q') {
             return Ok(false);
         }
-        let line1 = Image::new("Hello, world!", 20, TextAlign::Left).build();
+        let line1 = Image::new("Hello, world!", 20, TextAlign::Left)
+            .attr(style::Attribute::Bold)
+            .build();
         let line2 = Image::new("Goodbye, world!", 20, TextAlign::Right)
             .fg_color(style::Color::Red)
+            .attr(style::Attribute::Underlined)
             .build();
         let vert = line1.vert(line2);
         self.renderer.render(&vert)?;
