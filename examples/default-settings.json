@@ -1,0 +1,8 @@
+{
+  "theme": "SonokaiShusia",
+  "global_hotkeys": {
+    "F12": "Split",
+    "F11": "UndoSplit",
+    "F10": "Reset"
+  }
+}

@@ -5,8 +5,10 @@ use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
-use crate::render::Renderer;
-use crate::split_file::{read_split_file, SplitFile};
+use crate::{
+    rotty::Renderer,
+    split_file::{read_split_file, SplitFile},
+};
 
 pub struct Timer {
     split_file: SplitFile,
