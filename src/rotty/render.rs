@@ -1,10 +1,11 @@
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use crossterm::{
-    cursor::{self, RestorePosition, SavePosition},
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    execute, queue,
-    style::{self, Color},
-    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    cursor::{self},
+    style::{
+        Attribute, Attributes, Color, Colors, Print, ResetColor, SetAttribute, SetAttributes,
+        SetBackgroundColor, SetColors, SetForegroundColor,
+    },
+    terminal::{self, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand, QueueableCommand,
 };
 use std::io::{stdout, Stdout, Write};
@@ -32,7 +33,7 @@ pub struct Renderer {
 
     last_fg_color: Color,
     last_bg_color: Color,
-    last_attrs: style::Attributes,
+    last_attrs: Attributes,
 }
 
 impl Renderer {
@@ -44,8 +45,13 @@ impl Renderer {
             default_bg_color: Color::Reset,
             last_fg_color: Color::Reset,
             last_bg_color: Color::Reset,
-            last_attrs: style::Attributes::none(),
+            last_attrs: Attributes::none(),
         }
+    }
+
+    pub fn set_default_colors(&mut self, fg_color: Color, bg_color: Color) {
+        self.default_fg_color = fg_color;
+        self.default_bg_color = bg_color;
     }
 
     pub fn render(&mut self, block: &Block) -> anyhow::Result<()> {
@@ -57,19 +63,19 @@ impl Renderer {
         }
         self.stdout
             .queue(terminal::Clear(ClearType::All))?
-            .queue(style::SetColors(style::Colors {
+            .queue(SetColors(Colors {
                 foreground: Some(self.default_fg_color),
                 background: Some(self.default_bg_color),
             }))?
-            .queue(style::SetAttributes(style::Attributes::none()))?;
+            .queue(SetAttributes(Attributes::none()))?;
         self.last_fg_color = self.default_fg_color;
         self.last_bg_color = self.default_bg_color;
-        self.last_attrs = style::Attributes::none();
+        self.last_attrs = Attributes::none();
 
         self.render_block(block, Point { x: 0, y: 0 })
             .context("Failed to render block")?;
 
-        self.stdout.flush()?;
+        self.stdout.flush().context("Failed to flush to terminal")?;
 
         Ok(())
     }
@@ -100,8 +106,6 @@ impl Renderer {
             }
         };
 
-        // TODO proper error handling
-
         let fg_color = image.fg_color.unwrap_or(self.default_fg_color);
         let bg_color = image.bg_color.unwrap_or(self.default_bg_color);
 
@@ -109,27 +113,21 @@ impl Renderer {
             || bg_color != self.last_bg_color
             || image.attrs != self.last_attrs
         {
-            // Set all of these together, because style::Attribute::Reset also resets colors
+            // Set all of these together, because Attribute::Reset also resets colors
             self.stdout
-                .queue(style::SetAttribute(style::Attribute::Reset))
-                .unwrap()
-                .queue(style::SetForegroundColor(fg_color))
-                .unwrap()
-                .queue(style::SetBackgroundColor(bg_color))
-                .unwrap()
-                .queue(style::SetAttributes(image.attrs))
-                .unwrap();
+                .queue(SetAttribute(Attribute::Reset))?
+                .queue(SetForegroundColor(fg_color))?
+                .queue(SetBackgroundColor(bg_color))?
+                .queue(SetAttributes(image.attrs))?;
             self.last_fg_color = fg_color;
             self.last_bg_color = bg_color;
             self.last_attrs = image.attrs;
         }
 
         self.stdout
-            .queue(cursor::MoveTo((top_left.x + x) as u16, top_left.y as u16))
-            .unwrap()
+            .queue(cursor::MoveTo((top_left.x + x) as u16, top_left.y as u16))?
             // TODO handle too-long text
-            .queue(style::Print(&image.text))
-            .unwrap();
+            .queue(Print(&image.text))?;
 
         Ok(AABB {
             top_left: Point {
@@ -188,7 +186,7 @@ impl Renderer {
 impl Drop for Renderer {
     fn drop(&mut self) {
         self.stdout
-            .execute(style::ResetColor)
+            .execute(ResetColor)
             .unwrap()
             .execute(cursor::Show)
             .unwrap()
