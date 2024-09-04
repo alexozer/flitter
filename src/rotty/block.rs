@@ -73,7 +73,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn text(t: &str, width: u32, align: TextAlign) -> Self {
+    pub fn new(t: &str, width: u32, align: TextAlign) -> Self {
         Image {
             text: t.to_string(),
             width,

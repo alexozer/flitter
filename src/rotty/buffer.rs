@@ -53,14 +53,14 @@ struct Point {
 }
 
 #[derive(Clone, Copy)]
-struct AABB {
+pub struct AABB {
     top_left: Point,
     size: Point,
 }
 
 // Renders the block starting at the given point, and returns a bounding box of what
 // was rendered
-fn render(block: &Block, top_left: Point, buffer: &mut RenderBuffer) -> AABB {
+pub fn render(block: &Block, top_left: Point, buffer: &mut RenderBuffer) -> AABB {
     match block {
         Block::Image(image) => render_image(image, top_left, buffer),
         Block::Join { dir, blocks } => render_join(dir, blocks, top_left, buffer),

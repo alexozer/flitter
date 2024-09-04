@@ -6,7 +6,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::{
-    rotty::Renderer,
+    rotty::{Image, Renderer, TextAlign},
     split_file::{read_split_file, SplitFile},
 };
 
@@ -29,7 +29,8 @@ impl Timer {
         if read_chars()?.contains(&'q') {
             return Ok(false);
         }
-        self.renderer.render().unwrap();
+        self.renderer
+            .render(&Image::new("Hi there", 20, TextAlign::Left).build())?;
         Ok(true)
     }
 }

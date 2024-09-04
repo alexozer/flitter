@@ -8,6 +8,8 @@ use crossterm::{
 };
 use std::io::{stdout, Stdout, Write};
 
+use super::Block;
+
 const MENU: &str = r#"Crossterm interactive test
 
 Controls:
@@ -39,7 +41,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self) -> anyhow::Result<()> {
+    pub fn render(&mut self, block: &Block) -> anyhow::Result<()> {
         if !self.initialized {
             self.stdout.execute(EnterAlternateScreen)?;
             terminal::enable_raw_mode()?;
@@ -65,27 +67,13 @@ impl Renderer {
 
 impl Drop for Renderer {
     fn drop(&mut self) {
-        execute!(
-            self.stdout,
-            style::ResetColor,
-            cursor::Show,
-            LeaveAlternateScreen,
-        )
-        .unwrap();
+        self.stdout
+            .execute(style::ResetColor)
+            .unwrap()
+            .execute(cursor::Show)
+            .unwrap()
+            .execute(LeaveAlternateScreen)
+            .unwrap();
         terminal::disable_raw_mode().unwrap();
-    }
-}
-
-pub fn read_char() -> std::io::Result<char> {
-    loop {
-        if let Ok(Event::Key(KeyEvent {
-            code: KeyCode::Char(c),
-            kind: KeyEventKind::Press,
-            modifiers: _,
-            state: _,
-        })) = event::read()
-        {
-            return Ok(c);
-        }
     }
 }
