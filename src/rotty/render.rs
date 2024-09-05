@@ -55,23 +55,37 @@ impl Renderer {
     }
 
     pub fn render(&mut self, block: &Block) -> anyhow::Result<()> {
+        // Initialize terminal state
         if !self.initialized {
             self.stdout.execute(EnterAlternateScreen)?;
             terminal::enable_raw_mode()?;
             self.stdout.execute(cursor::Hide)?;
             self.initialized = true;
         }
+
+        // Reset current terminal colors and attributes
         self.stdout
-            .queue(terminal::Clear(ClearType::All))?
             .queue(SetColors(Colors {
                 foreground: Some(self.default_fg_color),
                 background: Some(self.default_bg_color),
             }))?
-            .queue(SetAttributes(Attributes::none()))?;
+            .queue(SetAttribute(Attribute::Reset))?;
         self.last_fg_color = self.default_fg_color;
         self.last_bg_color = self.default_bg_color;
         self.last_attrs = Attributes::none();
 
+        // Fill with blank, default BG color
+        self.stdout
+            .queue(SetBackgroundColor(self.default_bg_color))?;
+        let (width, height) = terminal::size()?;
+        let blank_line = " ".repeat(width as usize);
+        for y in 0..height {
+            self.stdout
+                .queue(cursor::MoveTo(0, y))?
+                .queue(Print(&blank_line))?;
+        }
+
+        // Render block
         self.render_block(block, Point { x: 0, y: 0 })
             .context("Failed to render block")?;
 

@@ -3,12 +3,50 @@ use std::time::Duration;
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use crossterm::style;
+use crossterm::style::{self, Color};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::{
     rotty::{Block, Image, Renderer, TextAlign},
     split_file::{read_split_file, SplitFile},
+};
+
+struct Theme {
+    bg: Color,
+    normal_text: Color,
+    behind_lose: Color,
+    behind_gain: Color,
+    ahead_lose: Color,
+    ahead_gain: Color,
+}
+
+static MONOKAI_THEME: Theme = Theme {
+    bg: Color::Rgb {
+        r: 0x6,
+        g: 0x6,
+        b: 0x4,
+    },
+    normal_text: Color::Rgb {
+        r: 0xF8,
+        g: 0xF8,
+        b: 0xF3,
+    },
+    behind_lose: Color::Rgb {
+        r: 0xF9,
+        g: 0x25,
+        b: 0x72,
+    },
+    behind_gain: Color::Rgb {
+        r: 0xF8,
+        g: 0x7A,
+        b: 0xA6,
+    },
+    ahead_lose: Color::White, // TODO
+    ahead_gain: Color::Rgb {
+        r: 0xA9,
+        g: 0xE2,
+        b: 0x36,
+    },
 };
 
 pub struct Timer {
@@ -27,6 +65,8 @@ impl Timer {
     }
 
     pub fn update(&mut self, delta_seconds: f32) -> anyhow::Result<bool> {
+        self.renderer
+            .set_default_colors(MONOKAI_THEME.normal_text, MONOKAI_THEME.bg);
         if read_chars()?.contains(&'q') {
             return Ok(false);
         }
