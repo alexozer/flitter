@@ -1,7 +1,10 @@
 use anyhow::Context;
 use crossterm::{
     cursor,
-    style::{Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetForegroundColor},
+    style::{
+        Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetBackgroundColor,
+        SetForegroundColor,
+    },
     QueueableCommand,
 };
 
@@ -85,7 +88,7 @@ impl RenderBuffer {
                     last_fg_color = curr_cell.fg_color;
                 }
                 if curr_cell.bg_color != last_bg_color {
-                    out.queue(SetForegroundColor(curr_cell.bg_color))?;
+                    out.queue(SetBackgroundColor(curr_cell.bg_color))?;
                     last_bg_color = curr_cell.bg_color;
                 }
                 out.queue(Print(curr_cell.ch))?;
