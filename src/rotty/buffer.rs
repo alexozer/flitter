@@ -1,8 +1,7 @@
 use crossterm::{
     cursor,
     style::{
-        Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetBackgroundColor,
-        SetColors, SetForegroundColor,
+        Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetForegroundColor,
     },
     QueueableCommand,
 };
