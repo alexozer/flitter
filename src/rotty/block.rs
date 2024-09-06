@@ -1,11 +1,13 @@
 use crossterm::style;
 
+#[derive(Clone)]
 pub enum TextAlign {
     Left,
     Right,
     Center,
 }
 
+#[derive(Clone)]
 pub enum JoinDir {
     Horiz,
     Vert,
@@ -13,6 +15,7 @@ pub enum JoinDir {
 }
 
 /// A Block is a recursive composition of other blocks and images.
+#[derive(Clone)]
 pub enum Block {
     Image(Image),
     Join { dir: JoinDir, blocks: Vec<Block> },
@@ -62,6 +65,7 @@ impl Block {
     }
 }
 
+#[derive(Clone)]
 pub struct Image {
     pub fg_color: Option<style::Color>,
     pub bg_color: Option<style::Color>,

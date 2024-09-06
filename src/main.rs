@@ -7,9 +7,12 @@ use std::{
 
 use timer::Timer;
 
+mod bigtext;
 mod rotty;
 mod split_file;
 mod timer;
+mod timer_state;
+mod view;
 
 static TARGET_FPS: i32 = 60;
 

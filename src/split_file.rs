@@ -1,35 +1,36 @@
+use anyhow::anyhow;
 use serde::{de, Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct SplitFile {
-    title: String,
-    category: String,
-    attempts: u32,
-    completed: u32,
-    split_names: Vec<String>,
-    golds: Vec<Gold>,
-    personal_best: PersonalBest,
+pub struct SplitFile {
+    pub title: String,
+    pub category: String,
+    pub attempts: u32,
+    pub completed: u32,
+    pub split_names: Vec<String>,
+    pub golds: Vec<Option<Gold>>,
+    pub personal_best: PersonalBest,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Gold {
+pub struct Gold {
     #[serde(with = "duration_format")]
-    duration: Duration,
+    pub duration: Duration,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct PersonalBest {
-    attempt: u32,
-    splits: Vec<Split>,
+pub struct PersonalBest {
+    pub attempt: u32,
+    pub splits: Vec<Option<Split>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Split {
+pub struct Split {
     #[serde(with = "duration_format")]
-    time: Duration,
+    pub time: Duration,
 }
 
 mod duration_format {
@@ -73,7 +74,7 @@ mod duration_format {
             type Value = Duration;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a string in the format MM:SS.mmm")
+                formatter.write_str("a string in the format D:H:MM:SS.mmm")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -114,6 +115,14 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     let file = std::fs::File::open(path)?;
     let reader = std::io::BufReader::new(file);
     let split_set: SplitFile = serde_json::from_reader(reader)?;
+    if split_set.golds.len() != split_set.split_names.len() {
+        return Err(anyhow!("Split name count does not match gold count"));
+    }
+    if split_set.personal_best.splits.len() != split_set.split_names.len() {
+        return Err(anyhow!(
+            "Split name count does not match personal best split count"
+        ));
+    }
     Ok(split_set)
 }
 
