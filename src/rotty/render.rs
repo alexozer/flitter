@@ -76,8 +76,8 @@ impl Renderer {
         };
 
         // Fill with blank, default BG color
-        for y in 0..width {
-            for x in 0..height {
+        for y in 0..height {
+            for x in 0..width {
                 curr_buf.at_mut(x, y).fg_color = self.default_fg_color;
                 curr_buf.at_mut(x, y).bg_color = self.default_bg_color;
                 curr_buf.at_mut(x, y).ch = ' ';
