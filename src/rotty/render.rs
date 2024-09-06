@@ -5,10 +5,10 @@ use crossterm::{
         Attribute, Attributes, Color, Colors, Print, ResetColor, SetAttribute, SetAttributes,
         SetBackgroundColor, SetColors, SetForegroundColor,
     },
-    terminal::{self, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand, QueueableCommand,
 };
-use std::io::{stdout, Stdout, Write};
+use std::io::{Stdout, Write};
 
 use super::{block::JoinDir, Block, Image, TextAlign};
 

@@ -6,7 +6,7 @@ use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
     timer_state::TimerState,
-    utils::{self, format_duration},
+    utils::{format_duration},
 };
 
 static TIMER_WIDTH: u32 = 40;

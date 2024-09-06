@@ -1,4 +1,3 @@
-use core::time;
 use std::time::{Duration, Instant};
 
 use crate::split_file::SplitFile;

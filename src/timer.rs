@@ -1,16 +1,15 @@
 use std::path::Path;
-use std::time::{self, Duration};
+use std::time::{Duration};
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use crossterm::style::{self, Color};
-use device_query::{DeviceQuery, DeviceState, Keycode};
+use device_query::DeviceState;
 
 use crate::timer_state::{TimerMode, TimerState};
 use crate::view::{self, Theme, MONOKAI_THEME};
 use crate::{
-    rotty::{Block, Image, Renderer, TextAlign},
-    split_file::{read_split_file, SplitFile},
+    rotty::Renderer,
+    split_file::read_split_file,
 };
 
 pub struct Timer {

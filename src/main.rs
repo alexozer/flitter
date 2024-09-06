@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     thread,
     time::{self, Duration},
 };
