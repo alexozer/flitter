@@ -1,9 +1,12 @@
+use std::time::Duration;
+
 use crossterm::style::{Attribute, Color};
 
 use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
     timer_state::TimerState,
+    utils::{self, format_duration},
 };
 
 static TIMER_WIDTH: u32 = 40;
@@ -79,15 +82,53 @@ pub fn render_view(timer_state: &TimerState, theme: &Theme) -> Block {
     )
     .build();
 
-    let timer = get_big_text("10:00.492");
+    let split_rows: Vec<Block> = (0..timer_state.split_file.split_names.len())
+        .map(|i| get_split_row(timer_state, i as u32))
+        .collect();
 
-    let sections = vec![
+    let timer = get_big_text(&format_duration(Duration::from_secs(0), 2));
+    let timer = timer.left_pad(TIMER_WIDTH);
+
+    let mut sections = vec![
         title_block,
         category_block,
         spacer_block.clone(),
         header_row,
         line_sep,
-        timer,
     ];
+    sections.extend(split_rows);
+    sections.push(spacer_block);
+    sections.push(timer);
     Block::vcat(sections)
+}
+
+fn get_split_row(timer_state: &TimerState, idx: u32) -> Block {
+    let split_name = &timer_state.split_file.split_names[idx as usize];
+    let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
+    let delta_col = Image::new("-", COL_WIDTH, TextAlign::Right).build();
+
+    let pb = &timer_state.split_file.personal_best;
+
+    // Currently only shows PB splits
+    let prev_time = if idx == 0 {
+        Some(Duration::from_secs(0))
+    } else {
+        pb.splits[(idx - 1) as usize]
+            .as_ref()
+            .map(|split| split.time)
+    };
+    let curr_time = pb.splits[idx as usize].as_ref().map(|split| split.time);
+    let sgmt_text = match (prev_time, curr_time) {
+        (Some(prev_time), Some(curr_time)) => format_duration(curr_time - prev_time, 2),
+        _ => "-".to_string(),
+    };
+    let time_text = match curr_time {
+        Some(curr_time) => format_duration(curr_time, 2),
+        None => "-".to_string(),
+    };
+
+    let sgmt_col = Image::new(&sgmt_text, COL_WIDTH, TextAlign::Right).build();
+    let time_col = Image::new(&time_text, COL_WIDTH, TextAlign::Right).build();
+
+    Block::hcat(vec![name_col, delta_col, sgmt_col, time_col])
 }

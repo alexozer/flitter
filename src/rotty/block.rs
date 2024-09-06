@@ -63,6 +63,34 @@ impl Block {
             blocks: blocks.into_iter().collect(),
         }
     }
+
+    pub fn width(&self) -> u32 {
+        match self {
+            Block::Image(img) => img.width,
+            Block::Join { dir, blocks } => match dir {
+                JoinDir::Horiz => blocks.iter().map(|b| b.width()).sum(),
+                JoinDir::Vert | JoinDir::Stack => {
+                    blocks.iter().map(|b| b.width()).max().unwrap_or(0)
+                }
+            },
+        }
+    }
+
+    // Eat your heart out, npm.
+    pub fn left_pad(self, width: u32) -> Self {
+        let block_width = self.width();
+        if width <= block_width {
+            self
+        } else {
+            let pad = Image::new(
+                &" ".repeat((width - block_width) as usize),
+                width - block_width,
+                TextAlign::Left,
+            )
+            .build();
+            pad.horiz(self)
+        }
+    }
 }
 
 #[derive(Clone)]
