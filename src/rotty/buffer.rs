@@ -1,19 +1,18 @@
+use anyhow::Context;
 use crossterm::{
     cursor,
-    style::{
-        Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetForegroundColor,
-    },
+    style::{Attribute, Attributes, Color, Print, SetAttribute, SetAttributes, SetForegroundColor},
     QueueableCommand,
 };
 
-struct Buffer {
+pub struct RenderBuffer {
     cells: Vec<Cell>,
-    width: u32,
+    width: u16,
     dummy: Cell,
 }
 
-impl Buffer {
-    fn new(width: u32, height: u32) -> Self {
+impl RenderBuffer {
+    pub fn new(width: u16, height: u16) -> Self {
         Self {
             cells: vec![Cell::default(); (width * height) as usize],
             width,
@@ -21,7 +20,15 @@ impl Buffer {
         }
     }
 
-    fn at_mut(&mut self, x: u32, y: u32) -> &mut Cell {
+    pub fn width(&self) -> u16 {
+        self.width
+    }
+
+    pub fn height(&self) -> u16 {
+        self.cells.len() as u16 / self.width
+    }
+
+    pub fn at_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let idx = (y * self.width + x) as usize;
         if idx >= self.cells.len() {
             &mut self.dummy
@@ -30,7 +37,7 @@ impl Buffer {
         }
     }
 
-    fn at_ref(&self, x: u32, y: u32) -> &Cell {
+    pub fn at_ref(&self, x: u16, y: u16) -> &Cell {
         let idx = (y * self.width + x) as usize;
         if idx >= self.cells.len() {
             &self.dummy
@@ -39,7 +46,7 @@ impl Buffer {
         }
     }
 
-    fn render<T>(&self, prev: &Buffer, mut out: T) -> anyhow::Result<()>
+    pub fn render<T>(&self, prev: &RenderBuffer, mut out: T) -> anyhow::Result<()>
     where
         T: std::io::Write,
     {
@@ -53,14 +60,14 @@ impl Buffer {
 
         for y in 0..(self.cells.len() / self.width as usize) {
             for x in 0..self.width {
-                let curr_cell = self.at_ref(x, y as u32);
-                let prev_cell = prev.at_ref(x, y as u32);
+                let curr_cell = self.at_ref(x, y as u16);
+                let prev_cell = prev.at_ref(x, y as u16);
                 if curr_cell == prev_cell {
                     continue;
                 }
 
-                let x = x as u16;
                 let y = y as u16;
+
                 if x != cursor_x || y != cursor_y {
                     out.queue(cursor::MoveTo(x, y))?;
                     cursor_x = x + 1; // Printing will advance cursor
@@ -85,16 +92,18 @@ impl Buffer {
             }
         }
 
+        out.flush().context("Failed to flush to terminal")?;
+
         Ok(())
     }
 }
 
 #[derive(Clone, PartialEq, Eq)]
-struct Cell {
-    ch: char,
-    fg_color: Color,
-    bg_color: Color,
-    attrs: Attributes,
+pub struct Cell {
+    pub ch: char,
+    pub fg_color: Color,
+    pub bg_color: Color,
+    pub attrs: Attributes,
 }
 
 impl Default for Cell {

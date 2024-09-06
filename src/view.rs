@@ -9,8 +9,8 @@ use crate::{
     utils::format_duration,
 };
 
-static TIMER_WIDTH: u32 = 48;
-static COL_WIDTH: u32 = 12;
+static TIMER_WIDTH: u16 = 48;
+static COL_WIDTH: u16 = 12;
 
 pub struct Theme {
     pub bg: Color,

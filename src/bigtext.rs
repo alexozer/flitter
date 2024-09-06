@@ -27,7 +27,7 @@ fn get_char_block(c: char) -> Option<Block> {
                     ch => ch,
                 })
                 .collect();
-            Image::new(&replaced, replaced.chars().count() as u32, TextAlign::Left).build()
+            Image::new(&replaced, replaced.chars().count() as u16, TextAlign::Left).build()
         })
         .collect();
 
