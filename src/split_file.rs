@@ -41,23 +41,13 @@ mod duration_format {
     use regex::{Match, Regex};
     use serde::{de, Deserializer, Serializer};
 
+    use crate::utils::format_duration;
+
     pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let day_sec = 60 * 60 * 24;
-        let hour_sec = 60 * 60;
-        let minute_sec = 60;
-        let duration_secs = duration.as_secs();
-        let days = duration_secs / day_sec;
-        let hours = (duration_secs % day_sec) / hour_sec;
-        let minutes = (duration_secs % hour_sec) / minute_sec;
-        let seconds = duration_secs % minute_sec;
-        let milliseconds = duration.subsec_millis();
-        serializer.serialize_str(&format!(
-            "{}:{:02}:{:02}:{:02}.{:03}",
-            days, hours, minutes, seconds, milliseconds
-        ))
+        serializer.serialize_str(&format_duration(*duration, 3))
     }
 
     static DURATION_REGEX: LazyLock<Regex> = LazyLock::new(|| {

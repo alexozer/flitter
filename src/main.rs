@@ -12,6 +12,7 @@ mod rotty;
 mod split_file;
 mod timer;
 mod timer_state;
+mod utils;
 mod view;
 
 static TARGET_FPS: i32 = 60;
