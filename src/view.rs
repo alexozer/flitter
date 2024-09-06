@@ -6,15 +6,16 @@ use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
     timer_state::TimerState,
-    utils::{format_duration},
+    utils::format_duration,
 };
 
-static TIMER_WIDTH: u32 = 40;
-static COL_WIDTH: u32 = 10;
+static TIMER_WIDTH: u32 = 48;
+static COL_WIDTH: u32 = 12;
 
 pub struct Theme {
     pub bg: Color,
     pub normal_text: Color,
+    pub label_text: Color,
     pub behind_lose: Color,
     pub behind_gain: Color,
     pub ahead_lose: Color,
@@ -31,6 +32,11 @@ pub static MONOKAI_THEME: Theme = Theme {
         r: 0xF8,
         g: 0xF8,
         b: 0xF3,
+    },
+    label_text: Color::Rgb {
+        r: 0x9E,
+        g: 0x9E,
+        b: 0x9B,
     },
     behind_lose: Color::Rgb {
         r: 0xF9,
@@ -71,8 +77,11 @@ pub fn render_view(timer_state: &TimerState, theme: &Theme) -> Block {
     )
     .build();
 
-    let headers =
-        ["", "Delta", "Sgmt", "Time"].map(|h| Image::new(h, COL_WIDTH, TextAlign::Right).build());
+    let headers = ["", "Delta", "Sgmt", "Time"].map(|h| {
+        Image::new(h, COL_WIDTH, TextAlign::Right)
+            .fg_color(theme.label_text)
+            .build()
+    });
     let header_row = Block::hcat(headers);
 
     let line_sep = Image::new(
@@ -80,6 +89,7 @@ pub fn render_view(timer_state: &TimerState, theme: &Theme) -> Block {
         TIMER_WIDTH,
         TextAlign::Left,
     )
+    .fg_color(theme.label_text)
     .build();
 
     let split_rows: Vec<Block> = (0..timer_state.split_file.split_names.len())

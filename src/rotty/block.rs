@@ -91,6 +91,16 @@ impl Block {
             pad.horiz(self)
         }
     }
+
+    pub fn fg_color(self, color: style::Color) -> Self {
+        match self {
+            Block::Image(img) => Block::Image(img.fg_color(color)),
+            Block::Join { dir, blocks } => Block::Join {
+                dir,
+                blocks: blocks.into_iter().map(|b| b.fg_color(color)).collect(),
+            },
+        }
+    }
 }
 
 #[derive(Clone)]

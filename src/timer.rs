@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::time::{Duration};
+use std::time::Duration;
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -7,10 +7,7 @@ use device_query::DeviceState;
 
 use crate::timer_state::{TimerMode, TimerState};
 use crate::view::{self, Theme, MONOKAI_THEME};
-use crate::{
-    rotty::Renderer,
-    split_file::read_split_file,
-};
+use crate::{rotty::Renderer, split_file::read_split_file};
 
 pub struct Timer {
     device_state: DeviceState,

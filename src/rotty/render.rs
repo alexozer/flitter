@@ -19,7 +19,7 @@ struct Point {
 }
 
 #[derive(Clone, Copy)]
-pub struct AABB {
+pub struct Aabb {
     top_left: Point,
     size: Point,
 }
@@ -94,14 +94,14 @@ impl Renderer {
         Ok(())
     }
 
-    fn render_block(&mut self, block: &Block, top_left: Point) -> anyhow::Result<AABB> {
+    fn render_block(&mut self, block: &Block, top_left: Point) -> anyhow::Result<Aabb> {
         match block {
             Block::Image(image) => self.render_image(image, top_left),
             Block::Join { dir, blocks } => self.render_join(dir, blocks, top_left),
         }
     }
 
-    fn render_image(&mut self, image: &Image, top_left: Point) -> anyhow::Result<AABB> {
+    fn render_image(&mut self, image: &Image, top_left: Point) -> anyhow::Result<Aabb> {
         let chars = image.text.chars().collect::<Vec<char>>();
 
         // Calculate text start based on alignment
@@ -143,7 +143,7 @@ impl Renderer {
             // TODO handle too-long text
             .queue(Print(&image.text))?;
 
-        Ok(AABB {
+        Ok(Aabb {
             top_left: Point {
                 x: top_left.x,
                 y: top_left.y,
@@ -160,8 +160,8 @@ impl Renderer {
         dir: &JoinDir,
         blocks: &Vec<Block>,
         top_left: Point,
-    ) -> anyhow::Result<AABB> {
-        let mut aabb = AABB {
+    ) -> anyhow::Result<Aabb> {
+        let mut aabb = Aabb {
             top_left,
             size: Point { x: 0, y: 0 },
         };
