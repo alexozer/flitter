@@ -20,13 +20,11 @@ impl Timer {
     pub fn new(splits_file: &Path, config_path: &Path) -> anyhow::Result<Self> {
         let split_file = read_split_file(splits_file).context("Failed to read splits file")?;
 
-        let settings: Settings;
-        if config_path.exists() {
-            settings = settings::read_settings_file(&config_path)
-                .context("Unable to read settings file")?;
+        let settings = if config_path.exists() {
+            settings::read_settings_file(&config_path).context("Failed to read settings file")?
         } else {
-            settings = settings::DEFAULT_SETTINGS.clone();
-        }
+            settings::DEFAULT_SETTINGS.clone()
+        };
 
         Ok(Self {
             device_state: DeviceState::new(),

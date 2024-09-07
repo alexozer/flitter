@@ -1,8 +1,10 @@
 {
   "theme": "Monokai",
   "global_hotkeys": {
-    "F12": "Split",
-    "F11": "UndoSplit",
-    "F10": "Reset"
+    "Space": "Split",
+    "PageUp": "UndoSplit",
+    "End": "DeleteSplit",
+    "Backspace": "ResetAndSave",
+    "Delete": "ResetAndDelete"
   }
 }

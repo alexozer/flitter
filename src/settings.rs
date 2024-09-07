@@ -187,8 +187,13 @@ pub enum Action {
 }
 
 #[derive(Deserialize)]
+pub enum ThemeName {
+    Monokai,
+}
+
+#[derive(Deserialize)]
 pub struct ParsedSettings {
-    pub theme: String,
+    pub theme: ThemeName,
     pub global_hotkeys: HashMap<String, Action>,
 }
 
@@ -214,9 +219,9 @@ pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
     let reader = std::io::BufReader::new(file);
     let parsed: ParsedSettings = serde_json::from_reader(reader)?;
 
-    if parsed.theme != "Monokai" {
-        return Err(anyhow!("Invalid theme: {}", parsed.theme));
-    }
+    let theme = match parsed.theme {
+        ThemeName::Monokai => &MONOKAI_THEME,
+    };
 
     let mut global_hotkeys = HashMap::<Keycode, Action>::new();
     for hotkey in parsed.global_hotkeys.iter() {
@@ -228,7 +233,7 @@ pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
     }
 
     Ok(Settings {
-        theme: &MONOKAI_THEME,
+        theme,
         global_hotkeys,
     })
 }
