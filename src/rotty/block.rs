@@ -101,6 +101,16 @@ impl Block {
             },
         }
     }
+
+    pub fn bg_color(self, color: style::Color) -> Self {
+        match self {
+            Block::Image(img) => Block::Image(img.bg_color(color)),
+            Block::Join { dir, blocks } => Block::Join {
+                dir,
+                blocks: blocks.into_iter().map(|b| b.bg_color(color)).collect(),
+            },
+        }
+    }
 }
 
 #[derive(Clone)]

@@ -117,7 +117,7 @@ impl Renderer {
             TextAlign::Left => 0,
             TextAlign::Center => {
                 if (chars.len() as u16) < image.width {
-                    ((image.width - chars.len() as u16) / 2)
+                    (image.width - chars.len() as u16) / 2
                 } else {
                     0
                 }
@@ -127,9 +127,6 @@ impl Renderer {
                 offset.max(0) as u16
             }
         };
-
-        let fg_color = image.fg_color.unwrap_or(self.default_fg_color);
-        let bg_color = image.bg_color.unwrap_or(self.default_bg_color);
 
         for (i, ch) in image.text.chars().enumerate() {
             let xx = top_left.x + x + i as u16;
@@ -143,8 +140,8 @@ impl Renderer {
             let cell = curr_buf.at_mut(xx, yy);
 
             cell.ch = ch;
-            cell.fg_color = fg_color;
-            cell.bg_color = bg_color;
+            cell.fg_color = image.fg_color.unwrap_or(cell.fg_color);
+            cell.bg_color = image.bg_color.unwrap_or(cell.bg_color);
             cell.attrs = image.attrs;
         }
 
