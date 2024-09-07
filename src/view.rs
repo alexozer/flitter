@@ -1,72 +1,17 @@
 use std::time::Duration;
 
-use crossterm::style::{Attribute, Color};
+use crossterm::style::Attribute;
 
 use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
-    split_file::PersonalBest,
+    settings::Theme,
     timer_state::{TimerMode, TimerState},
     utils::format_duration,
 };
 
 static TIMER_WIDTH: u16 = 48;
 static COL_WIDTH: u16 = 12;
-
-pub struct Theme {
-    pub bg: Color,
-    pub normal_text: Color,
-    pub label_text: Color,
-    pub behind_lose: Color,
-    pub behind_gain: Color,
-    pub ahead_lose: Color,
-    pub ahead_gain: Color,
-    pub highlight: Color,
-}
-
-pub static MONOKAI_THEME: Theme = Theme {
-    bg: Color::Rgb {
-        r: 0x6,
-        g: 0x6,
-        b: 0x4,
-    },
-    normal_text: Color::Rgb {
-        r: 0xF8,
-        g: 0xF8,
-        b: 0xF3,
-    },
-    label_text: Color::Rgb {
-        r: 0x9E,
-        g: 0x9E,
-        b: 0x9B,
-    },
-    behind_lose: Color::Rgb {
-        r: 0xF9,
-        g: 0x25,
-        b: 0x72,
-    },
-    behind_gain: Color::Rgb {
-        r: 0xF8,
-        g: 0x7A,
-        b: 0xA6,
-    },
-    ahead_lose: Color::Rgb {
-        r: 0xC6,
-        g: 0xEA,
-        b: 0x7C,
-    },
-    ahead_gain: Color::Rgb {
-        r: 0xA9,
-        g: 0xE2,
-        b: 0x36,
-    },
-    highlight: Color::Rgb {
-        r: 0x5B,
-        g: 0x60,
-        b: 0xFF,
-    },
-};
-
 pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     let title = &timer.split_file.title;
     let category = &timer.split_file.category;
@@ -135,7 +80,7 @@ fn get_split_time(idx: i32, timer: &TimerState) -> Option<Duration> {
 fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     let split_name = &timer.split_file.split_names[idx as usize];
     let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
-    let delta_col = Image::new("-", COL_WIDTH, TextAlign::Right).build();
+    let delta_col = get_delta_block(timer, idx, theme);
 
     let prev_time = get_split_time(idx as i32 - 1, timer);
     let curr_time = get_split_time(idx as i32, timer);
@@ -172,4 +117,9 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     .bg_color(bg_color)
     .build();
     bg.stack(Block::hcat(vec![name_col, delta_col, sgmt_col, time_col]))
+}
+
+fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
+    // TODO
+    Image::new("-", COL_WIDTH, TextAlign::Right).build()
 }

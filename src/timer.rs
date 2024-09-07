@@ -5,39 +5,49 @@ use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use device_query::DeviceState;
 
+use crate::settings::{self, Settings};
 use crate::timer_state::{TimerMode, TimerState};
-use crate::view::{self, Theme, MONOKAI_THEME};
-use crate::{rotty::Renderer, split_file::read_split_file};
+use crate::{rotty::Renderer, split_file::read_split_file, view};
 
 pub struct Timer {
     device_state: DeviceState,
     renderer: Renderer,
     timer_state: TimerState,
-    theme: &'static Theme,
+    settings: Settings,
 }
 
 impl Timer {
-    pub fn new(splits_file: &Path) -> anyhow::Result<Self> {
+    pub fn new(splits_file: &Path, config_path: &Path) -> anyhow::Result<Self> {
+        let split_file = read_split_file(splits_file).context("Failed to read splits file")?;
+
+        let settings: Settings;
+        if config_path.exists() {
+            settings = settings::read_settings_file(&config_path)
+                .context("Unable to read settings file")?;
+        } else {
+            settings = settings::DEFAULT_SETTINGS.clone();
+        }
+
         Ok(Self {
             device_state: DeviceState::new(),
             renderer: Renderer::new(),
             timer_state: TimerState {
-                split_file: read_split_file(splits_file).context("Failed to read splits file")?,
+                split_file,
                 splits: Vec::new(),
                 mode: TimerMode::Initial,
             },
-            theme: &MONOKAI_THEME,
+            settings,
         })
     }
 
     pub fn update(&mut self, delta_seconds: f32) -> anyhow::Result<bool> {
         self.renderer
-            .set_default_colors(self.theme.normal_text, self.theme.bg);
+            .set_default_colors(self.settings.theme.normal_text, self.settings.theme.bg);
         if read_chars()?.contains(&'q') {
             return Ok(false);
         }
 
-        let block = view::render_view(&self.timer_state, self.theme);
+        let block = view::render_view(&self.timer_state, self.settings.theme);
         self.renderer.render(&block)?;
         Ok(true)
     }

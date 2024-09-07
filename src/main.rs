@@ -9,6 +9,7 @@ use timer::Timer;
 
 mod bigtext;
 mod rotty;
+mod settings;
 mod split_file;
 mod timer;
 mod timer_state;
@@ -24,7 +25,12 @@ fn main() -> anyhow::Result<()> {
     }
     let path = PathBuf::from(&args[1]);
 
-    let mut timer = Timer::new(&path)?;
+    let config_path = PathBuf::from(std::env::var("HOME").unwrap())
+        .join(".config")
+        .join("flitter-timer")
+        .join("config.json");
+
+    let mut timer = Timer::new(&path, &config_path)?;
 
     let target_frame_time = Duration::from_secs_f32(1.0 / (TARGET_FPS as f32));
     let mut frame_time = target_frame_time;
