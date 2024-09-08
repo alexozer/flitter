@@ -60,9 +60,9 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         .map(|i| get_split_row(timer, i as u32, theme))
         .collect();
 
-    let timer = get_big_text(&format_duration(elapsed, 2));
-    let timer = timer.left_pad(TIMER_WIDTH);
-    let timer = timer.fg_color(parse_color(theme.ahead_gain));
+    let timer_block = get_big_text(&format_duration(elapsed, 2));
+    let timer_block = timer_block.left_pad(TIMER_WIDTH);
+    let timer_block = timer_block.fg_color(parse_color(theme.ahead_gain));
 
     let mut sections = vec![
         title_block,
@@ -74,8 +74,10 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     ];
     sections.extend(split_rows);
     sections.push(line_sep);
+    sections.push(spacer_block.clone());
+    sections.push(timer_block);
     sections.push(spacer_block);
-    sections.push(timer);
+    sections.push(get_sum_of_best_block(timer));
     Block::vcat(sections)
 }
 
@@ -141,4 +143,64 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
 fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     // TODO
     Image::new("-", COL_WIDTH, TextAlign::Right).build()
+}
+
+struct NewGold {
+    duration: Duration,
+    new: bool,
+}
+
+fn get_latest_golds(timer: &TimerState) -> Vec<Option<NewGold>> {
+    let mut golds: Vec<Option<NewGold>> = timer
+        .split_file
+        .golds
+        .iter()
+        .map(|gold| {
+            gold.as_ref().map(|g| NewGold {
+                duration: g.duration,
+                new: false,
+            })
+        })
+        .collect();
+    for i in 0..timer.splits.len() {
+        let curr_split = get_split_time(i as i32, &timer.splits);
+        let prev_split = get_split_time(i as i32 - 1, &timer.splits);
+        if let (Some(curr_split), Some(prev_split)) = (curr_split, prev_split) {
+            let delta = curr_split - prev_split;
+            match golds[i].as_ref() {
+                Some(g) => {
+                    if delta < g.duration {
+                        golds[i] = Some(NewGold {
+                            duration: delta,
+                            new: true,
+                        })
+                    }
+                }
+                None => {
+                    golds[i] = Some(NewGold {
+                        duration: delta,
+                        new: true,
+                    })
+                }
+            }
+        }
+    }
+    golds
+}
+
+fn get_sum_of_best_block(timer: &TimerState) -> Block {
+    let latest_golds = get_latest_golds(timer);
+    let sob_text = if latest_golds.iter().all(Option::is_some) {
+        let sob = latest_golds
+            .iter()
+            .map(|g| g.as_ref().unwrap().duration)
+            .sum();
+        format_duration(sob, 2)
+    } else {
+        "-".to_string()
+    };
+
+    let label_col = Image::new("Sum of Best Segments", TIMER_WIDTH / 2, TextAlign::Left).build();
+    let sob_col = Image::new(&sob_text, TIMER_WIDTH - TIMER_WIDTH / 2, TextAlign::Right).build();
+    label_col.horiz(sob_col)
 }
