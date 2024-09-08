@@ -79,15 +79,11 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     Block::vcat(sections)
 }
 
-fn get_split_time(idx: i32, timer: &TimerState) -> Option<Duration> {
+fn get_split_time(idx: i32, splits: &[Option<Duration>]) -> Option<Duration> {
     if idx < 0 {
         Some(Duration::from_secs(0))
-    } else if (idx as usize) < timer.splits.len() {
-        timer.splits[idx as usize]
     } else {
-        timer.split_file.personal_best.splits[idx as usize]
-            .as_ref()
-            .map(|s| s.time)
+        splits[idx as usize]
     }
 }
 
@@ -96,8 +92,26 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
     let delta_col = get_delta_block(timer, idx, theme);
 
-    let prev_time = get_split_time(idx as i32 - 1, timer);
-    let curr_time = get_split_time(idx as i32, timer);
+    // let prev_time = get_split_time(idx as i32 - 1, timer);
+    // let curr_time = get_split_time(idx as i32, timer);
+    let pb_splits: Vec<Option<Duration>> = timer
+        .split_file
+        .personal_best
+        .splits
+        .iter()
+        .map(|opt_split| opt_split.as_ref().map(|s| s.time))
+        .collect();
+
+    let curr_time;
+    let prev_time;
+    if (idx as usize) < timer.splits.len() {
+        curr_time = get_split_time(idx as i32, &timer.splits);
+        prev_time = get_split_time(idx as i32 - 1, &timer.splits);
+    } else {
+        curr_time = get_split_time(idx as i32, &pb_splits);
+        prev_time = get_split_time(idx as i32 - 1, &pb_splits);
+    }
+
     let sgmt_text = match (prev_time, curr_time) {
         (Some(prev_time), Some(curr_time)) => format_duration(curr_time - prev_time, 2),
         _ => "-".to_string(),
