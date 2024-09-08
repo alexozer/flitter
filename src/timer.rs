@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use device_query::{DeviceQuery, DeviceState};
+use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::settings::{self, Action, Settings};
 use crate::split_file::{write_split_file, Gold, Split};
@@ -15,6 +16,7 @@ pub struct Timer {
     renderer: Renderer,
     timer_state: TimerState,
     settings: Settings,
+    prev_keys: HashSet<Keycode>,
 }
 
 impl Timer {
@@ -36,6 +38,7 @@ impl Timer {
                 mode: TimerMode::Initial,
             },
             settings,
+            prev_keys: HashSet::new(),
         })
     }
 
@@ -59,10 +62,12 @@ impl Timer {
                 }
             }
             TimerMode::Running { start_time } => {
-                let elapsed = start_time.elapsed();
-
                 if actions.contains(&Action::UndoSplit) {
-                    self.timer_state.splits.pop();
+                    if self.timer_state.splits.is_empty() {
+                        self.reset_to_initial_mode();
+                    } else {
+                        self.timer_state.splits.pop();
+                    }
                 }
                 if actions.contains(&Action::DeleteSplit) && !self.timer_state.splits.is_empty() {
                     let len = self.timer_state.splits.len();
@@ -76,6 +81,7 @@ impl Timer {
                     self.reset_to_initial_mode();
                 }
                 if actions.contains(&Action::Split) {
+                    let elapsed = start_time.elapsed();
                     self.timer_state.splits.push(Some(elapsed));
                     if self.timer_state.splits.len()
                         == self.timer_state.split_file.split_names.len()

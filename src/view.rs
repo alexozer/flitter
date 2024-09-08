@@ -22,6 +22,12 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         .attr(Attribute::Bold)
         .build();
 
+    let attempts_text = format!(
+        "{}/{}",
+        timer.split_file.completed, timer.split_file.attempts
+    );
+    let attempts_block = Image::new(&attempts_text, TIMER_WIDTH, TextAlign::Right).build();
+
     let spacer_block = Image::new(
         &" ".repeat(TIMER_WIDTH as usize),
         TIMER_WIDTH,
@@ -29,7 +35,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     )
     .build();
 
-    let headers = ["", "Delta", "Sgmt", "Time"].map(|h| {
+    let headers = ["", "Delta", "Segment", "Split"].map(|h| {
         Image::new(h, COL_WIDTH, TextAlign::Right)
             .fg_color(theme.label_text)
             .build()
@@ -54,6 +60,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     let mut sections = vec![
         title_block,
         category_block,
+        attempts_block,
         spacer_block.clone(),
         header_row,
         line_sep.clone(),
