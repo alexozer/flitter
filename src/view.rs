@@ -7,12 +7,18 @@ use crate::{
     rotty::{Block, Image, TextAlign},
     settings::Theme,
     timer_state::{TimerMode, TimerState},
-    utils::format_duration,
+    utils::{format_duration, parse_color},
 };
 
 static TIMER_WIDTH: u16 = 48;
 static COL_WIDTH: u16 = 12;
 pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
+    let elapsed = match timer.mode {
+        TimerMode::Initial => Duration::from_secs(0),
+        TimerMode::Running { start_time } => start_time.elapsed(),
+        TimerMode::Finished { start_time: _ } => timer.splits.last().unwrap().unwrap(),
+    };
+
     let title = &timer.split_file.title;
     let category = &timer.split_file.category;
     let title_block = Image::new(title, TIMER_WIDTH, TextAlign::Center)
@@ -37,7 +43,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
 
     let headers = ["", "Delta", "Segment", "Split"].map(|h| {
         Image::new(h, COL_WIDTH, TextAlign::Right)
-            .fg_color(theme.label_text)
+            .fg_color(parse_color(theme.label_text))
             .build()
     });
     let header_row = Block::hcat(headers);
@@ -47,15 +53,16 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         TIMER_WIDTH,
         TextAlign::Left,
     )
-    .fg_color(theme.label_text)
+    .fg_color(parse_color(theme.label_text))
     .build();
 
     let split_rows: Vec<Block> = (0..timer.split_file.split_names.len())
         .map(|i| get_split_row(timer, i as u32, theme))
         .collect();
 
-    let timer = get_big_text(&format_duration(Duration::from_secs(0), 2));
+    let timer = get_big_text(&format_duration(elapsed, 2));
     let timer = timer.left_pad(TIMER_WIDTH);
+    let timer = timer.fg_color(parse_color(theme.ahead_gain));
 
     let mut sections = vec![
         title_block,
@@ -114,7 +121,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
         TIMER_WIDTH,
         TextAlign::Left,
     )
-    .bg_color(bg_color)
+    .bg_color(parse_color(bg_color))
     .build();
     bg.stack(Block::hcat(vec![name_col, delta_col, sgmt_col, time_col]))
 }

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crossterm::style::Color;
+
 pub fn format_duration(duration: Duration, ms_digits: u32) -> String {
     let day_sec = 60 * 60 * 24;
     let hour_sec = 60 * 60;
@@ -25,4 +27,13 @@ pub fn format_duration(duration: Duration, ms_digits: u32) -> String {
         ),
     };
     String::from(&s[..(s.len() - (3 - ms_digits as usize))])
+}
+
+pub fn parse_color(color_hex: &str) -> Color {
+    let color = u32::from_str_radix(color_hex.trim_start_matches('#'), 16).unwrap_or(0);
+    Color::Rgb {
+        r: ((color >> 16) & 0xFF) as u8,
+        g: ((color >> 8) & 0xFF) as u8,
+        b: (color & 0xFF) as u8,
+    }
 }

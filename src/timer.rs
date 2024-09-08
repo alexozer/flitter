@@ -9,6 +9,7 @@ use device_query::{DeviceQuery, DeviceState, Keycode};
 use crate::settings::{self, Action, Settings};
 use crate::split_file::{write_split_file, Gold, Split};
 use crate::timer_state::{TimerMode, TimerState};
+use crate::utils::parse_color;
 use crate::{rotty::Renderer, split_file::read_split_file, view};
 
 pub struct Timer {
@@ -47,9 +48,8 @@ impl Timer {
             return Ok(false);
         }
 
-        let global_keys = self.device_state.get_keys();
-        let global_keys: HashSet<Keycode> = global_keys.into_iter().collect();
-        let actions: Vec<Action> = global_keys
+        let global_keys: HashSet<Keycode> = self.device_state.get_keys().into_iter().collect();
+        let actions: HashSet<Action> = global_keys
             .iter()
             .filter(|key| !self.prev_keys.contains(key))
             .flat_map(|key| self.settings.global_hotkeys.get(key).copied())
@@ -77,7 +77,8 @@ impl Timer {
                     self.timer_state.splits[len - 1] = None;
                 }
                 if actions.contains(&Action::ResetAndSave) {
-                    self.save_golds()?;
+                    self.timer_state.split_file.attempts += 1;
+                    self.save_golds()?; // Also saves attempts
                     self.reset_to_initial_mode();
                 }
                 if actions.contains(&Action::ResetAndDelete) {
@@ -99,7 +100,9 @@ impl Timer {
                     self.timer_state.mode = TimerMode::Running { start_time };
                 }
                 if actions.contains(&Action::ResetAndSave) {
-                    self.save_golds()?;
+                    self.timer_state.split_file.attempts += 1;
+                    self.timer_state.split_file.completed += 1;
+                    self.save_golds()?; // Also saves attempts/completed
                     self.save_personal_best()?;
                     self.reset_to_initial_mode();
                 }
@@ -109,8 +112,10 @@ impl Timer {
             }
         }
 
-        self.renderer
-            .set_default_colors(self.settings.theme.normal_text, self.settings.theme.bg);
+        self.renderer.set_default_colors(
+            parse_color(self.settings.theme.normal_text),
+            parse_color(self.settings.theme.bg),
+        );
 
         let block = view::render_view(&self.timer_state, self.settings.theme);
         self.renderer.render(&block)?;
@@ -160,8 +165,8 @@ impl Timer {
         let splits = &self.timer_state.splits;
         let pb = &mut self.timer_state.split_file.personal_best;
 
-        let curr_time = splits[splits.len() - 1].unwrap();
-        let pb_time = pb.splits[pb.splits.len() - 1].as_ref().unwrap().time;
+        let curr_time = splits.last().unwrap().unwrap();
+        let pb_time = pb.splits.last().unwrap().as_ref().unwrap().time;
         if curr_time < pb_time {
             pb.splits = splits
                 .iter()

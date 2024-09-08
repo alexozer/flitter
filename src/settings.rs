@@ -124,60 +124,28 @@ pub fn keycode_from_str(s: &str) -> Option<Keycode> {
 }
 
 pub struct Theme {
-    pub bg: Color,
-    pub normal_text: Color,
-    pub label_text: Color,
-    pub behind_lose: Color,
-    pub behind_gain: Color,
-    pub ahead_lose: Color,
-    pub ahead_gain: Color,
-    pub highlight: Color,
+    pub bg: &'static str,
+    pub normal_text: &'static str,
+    pub label_text: &'static str,
+    pub behind_lose: &'static str,
+    pub behind_gain: &'static str,
+    pub ahead_lose: &'static str,
+    pub ahead_gain: &'static str,
+    pub highlight: &'static str,
 }
 
-static MONOKAI_THEME: Theme = Theme {
-    bg: Color::Rgb {
-        r: 0x6,
-        g: 0x6,
-        b: 0x4,
-    },
-    normal_text: Color::Rgb {
-        r: 0xF8,
-        g: 0xF8,
-        b: 0xF3,
-    },
-    label_text: Color::Rgb {
-        r: 0x9E,
-        g: 0x9E,
-        b: 0x9B,
-    },
-    behind_lose: Color::Rgb {
-        r: 0xF9,
-        g: 0x25,
-        b: 0x72,
-    },
-    behind_gain: Color::Rgb {
-        r: 0xF8,
-        g: 0x7A,
-        b: 0xA6,
-    },
-    ahead_lose: Color::Rgb {
-        r: 0xC6,
-        g: 0xEA,
-        b: 0x7C,
-    },
-    ahead_gain: Color::Rgb {
-        r: 0xA9,
-        g: 0xE2,
-        b: 0x36,
-    },
-    highlight: Color::Rgb {
-        r: 0x5B,
-        g: 0x60,
-        b: 0xFF,
-    },
+static FLITTER_THEME: Theme = Theme {
+    bg: "#060604",
+    normal_text: "#F8F8F3",
+    label_text: "#9E9E9B",
+    behind_lose: "#F92572",
+    behind_gain: "#F87AA6",
+    ahead_lose: "#6EEB78",
+    ahead_gain: "#1CE82C",
+    highlight: "#5B60FF",
 };
 
-#[derive(Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Action {
     Split,
     UndoSplit,
@@ -188,7 +156,7 @@ pub enum Action {
 
 #[derive(Deserialize)]
 pub enum ThemeName {
-    Monokai,
+    Flitter,
 }
 
 #[derive(Deserialize)]
@@ -204,7 +172,7 @@ pub struct Settings {
 }
 
 pub static DEFAULT_SETTINGS: LazyLock<Settings> = LazyLock::new(|| Settings {
-    theme: &MONOKAI_THEME,
+    theme: &FLITTER_THEME,
     global_hotkeys: HashMap::from([
         (Keycode::Space, Action::Split),
         (Keycode::PageUp, Action::UndoSplit),
@@ -220,7 +188,7 @@ pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
     let parsed: ParsedSettings = serde_json::from_reader(reader)?;
 
     let theme = match parsed.theme {
-        ThemeName::Monokai => &MONOKAI_THEME,
+        ThemeName::Flitter => &FLITTER_THEME,
     };
 
     let mut global_hotkeys = HashMap::<Keycode, Action>::new();
