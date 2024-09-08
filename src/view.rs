@@ -92,8 +92,6 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
     let delta_col = get_delta_block(timer, idx, theme);
 
-    // let prev_time = get_split_time(idx as i32 - 1, timer);
-    // let curr_time = get_split_time(idx as i32, timer);
     let pb_splits: Vec<Option<Duration>> = timer
         .split_file
         .personal_best

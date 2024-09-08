@@ -108,6 +108,17 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     let reader = std::io::BufReader::new(file);
     let mut split_set: SplitFile = serde_json::from_reader(reader)?;
     split_set.file_path = path.to_owned();
+
+    if split_set.split_names.is_empty() {
+        return Err(anyhow!("Split names cannot be empty"));
+    }
+    if split_set.personal_best.splits.is_empty() {
+        return Err(anyhow!("Personal best cannot be empty"));
+    }
+    if split_set.golds.is_empty() {
+        return Err(anyhow!("Golds cannot be empty"));
+    }
+
     if split_set.golds.len() != split_set.split_names.len() {
         return Err(anyhow!("Split name count does not match gold count"));
     }
@@ -116,6 +127,11 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
             "Split name count does not match personal best split count"
         ));
     }
+
+    if split_set.personal_best.splits.last().unwrap().is_none() {
+        return Err(anyhow!("Last split of personal best cannot be null"));
+    }
+
     Ok(split_set)
 }
 
