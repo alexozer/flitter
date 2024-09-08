@@ -48,10 +48,13 @@ impl Timer {
         }
 
         let global_keys = self.device_state.get_keys();
+        let global_keys: HashSet<Keycode> = global_keys.into_iter().collect();
         let actions: Vec<Action> = global_keys
             .iter()
+            .filter(|key| !self.prev_keys.contains(key))
             .flat_map(|key| self.settings.global_hotkeys.get(key).copied())
             .collect();
+        self.prev_keys = global_keys;
 
         match self.timer_state.mode {
             TimerMode::Initial => {
