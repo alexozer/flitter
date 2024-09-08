@@ -177,7 +177,7 @@ static MONOKAI_THEME: Theme = Theme {
     },
 };
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     Split,
     UndoSplit,

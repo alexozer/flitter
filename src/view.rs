@@ -96,14 +96,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     let sgmt_col = Image::new(&sgmt_text, COL_WIDTH, TextAlign::Right).build();
     let time_col = Image::new(&time_text, COL_WIDTH, TextAlign::Right).build();
 
-    let running = matches!(
-        timer.mode,
-        TimerMode::Running { start_time: _ }
-            | TimerMode::Paused {
-                start_time: _,
-                paused_at: _,
-            }
-    );
+    let running = matches!(timer.mode, TimerMode::Running { start_time: _ });
     let bg_color = if running && idx as usize == timer.splits.len() {
         theme.highlight
     } else {

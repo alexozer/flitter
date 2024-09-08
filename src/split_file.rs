@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -12,6 +12,9 @@ pub struct SplitFile {
     pub split_names: Vec<String>,
     pub golds: Vec<Option<Gold>>,
     pub personal_best: PersonalBest,
+
+    #[serde(skip)]
+    file_path: PathBuf,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -103,7 +106,8 @@ mod duration_format {
 pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     let file = std::fs::File::open(path)?;
     let reader = std::io::BufReader::new(file);
-    let split_set: SplitFile = serde_json::from_reader(reader)?;
+    let mut split_set: SplitFile = serde_json::from_reader(reader)?;
+    split_set.file_path = path.to_owned();
     if split_set.golds.len() != split_set.split_names.len() {
         return Err(anyhow!("Split name count does not match gold count"));
     }
@@ -115,8 +119,8 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     Ok(split_set)
 }
 
-pub fn write_split_set(split_set: &SplitFile, path: &Path) -> anyhow::Result<()> {
-    let file = std::fs::File::create(path)?;
-    serde_json::to_writer_pretty(file, split_set)?;
+pub fn write_split_file(split_file: &SplitFile) -> anyhow::Result<()> {
+    let file = std::fs::File::create(&split_file.file_path)?;
+    serde_json::to_writer_pretty(file, split_file)?;
     Ok(())
 }
