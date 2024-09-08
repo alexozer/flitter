@@ -49,67 +49,15 @@ impl Timer {
         }
 
         let global_keys: HashSet<Keycode> = self.device_state.get_keys().into_iter().collect();
-        let actions: HashSet<Action> = global_keys
+        let actions: Vec<Action> = global_keys
             .iter()
             .filter(|key| !self.prev_keys.contains(key))
             .flat_map(|key| self.settings.global_hotkeys.get(key).copied())
             .collect();
         self.prev_keys = global_keys;
 
-        match self.timer_state.mode {
-            TimerMode::Initial => {
-                if actions.contains(&Action::Split) {
-                    self.timer_state.mode = TimerMode::Running {
-                        start_time: Instant::now(),
-                    }
-                }
-            }
-            TimerMode::Running { start_time } => {
-                if actions.contains(&Action::UndoSplit) {
-                    if self.timer_state.splits.is_empty() {
-                        self.reset_to_initial_mode();
-                    } else {
-                        self.timer_state.splits.pop();
-                    }
-                }
-                if actions.contains(&Action::DeleteSplit) && !self.timer_state.splits.is_empty() {
-                    let len = self.timer_state.splits.len();
-                    self.timer_state.splits[len - 1] = None;
-                }
-                if actions.contains(&Action::ResetAndSave) {
-                    self.timer_state.split_file.attempts += 1;
-                    self.save_golds()?; // Also saves attempts
-                    self.reset_to_initial_mode();
-                }
-                if actions.contains(&Action::ResetAndDelete) {
-                    self.reset_to_initial_mode();
-                }
-                if actions.contains(&Action::Split) {
-                    let elapsed = start_time.elapsed();
-                    self.timer_state.splits.push(Some(elapsed));
-                    if self.timer_state.splits.len()
-                        == self.timer_state.split_file.split_names.len()
-                    {
-                        self.timer_state.mode = TimerMode::Finished { start_time };
-                    }
-                }
-            }
-            TimerMode::Finished { start_time } => {
-                if actions.contains(&Action::UndoSplit) {
-                    self.timer_state.splits.pop();
-                    self.timer_state.mode = TimerMode::Running { start_time };
-                }
-                if actions.contains(&Action::ResetAndSave) {
-                    self.timer_state.split_file.attempts += 1;
-                    self.timer_state.split_file.completed += 1;
-                    self.save_golds()?; // Also saves attempts/completed
-                    self.save_personal_best()?;
-                    self.reset_to_initial_mode();
-                }
-                if actions.contains(&Action::ResetAndDelete) {
-                    self.reset_to_initial_mode();
-                }
-            }
+        for action in actions {
+            self.apply_action(action)?;
         }
 
         self.renderer.set_default_colors(
@@ -120,6 +68,70 @@ impl Timer {
         let block = view::render_view(&self.timer_state, self.settings.theme);
         self.renderer.render(&block)?;
         Ok(true)
+    }
+
+    pub fn apply_action(&mut self, action: Action) -> anyhow::Result<()> {
+        match self.timer_state.mode {
+            #[allow(clippy::single_match)]
+            TimerMode::Initial => match action {
+                Action::Split => {
+                    self.timer_state.mode = TimerMode::Running {
+                        start_time: Instant::now(),
+                    };
+                }
+                _ => {}
+            },
+            TimerMode::Running { start_time } => match action {
+                Action::Split => {
+                    let elapsed = start_time.elapsed();
+                    self.timer_state.splits.push(Some(elapsed));
+                    if self.timer_state.splits.len()
+                        == self.timer_state.split_file.split_names.len()
+                    {
+                        self.timer_state.mode = TimerMode::Finished { start_time };
+                    }
+                }
+                Action::UndoSplit => {
+                    if self.timer_state.splits.is_empty() {
+                        self.reset_to_initial_mode();
+                    } else {
+                        self.timer_state.splits.pop();
+                    }
+                }
+                Action::DeleteSplit => {
+                    if !self.timer_state.splits.is_empty() {
+                        let len = self.timer_state.splits.len();
+                        self.timer_state.splits[len - 1] = None;
+                    }
+                }
+                Action::ResetAndSave => {
+                    self.timer_state.split_file.attempts += 1;
+                    self.save_golds()?; // Also saves attempts
+                    self.reset_to_initial_mode();
+                }
+                Action::ResetAndDelete => {
+                    self.reset_to_initial_mode();
+                }
+            },
+            TimerMode::Finished { start_time } => match action {
+                Action::UndoSplit => {
+                    self.timer_state.splits.pop();
+                    self.timer_state.mode = TimerMode::Running { start_time };
+                }
+                Action::ResetAndSave => {
+                    self.timer_state.split_file.attempts += 1;
+                    self.timer_state.split_file.completed += 1;
+                    self.save_golds()?; // Also saves attempts/completed
+                    self.save_personal_best()?;
+                    self.reset_to_initial_mode();
+                }
+                Action::ResetAndDelete => {
+                    self.reset_to_initial_mode();
+                }
+                _ => {}
+            },
+        }
+        Ok(())
     }
 
     fn reset_to_initial_mode(&mut self) {
