@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use crossterm::style::Color;
 
+use crate::timer_state::TimerState;
+
 pub fn format_duration(duration: Duration, ms_digits: u32) -> String {
     let day_sec = 60 * 60 * 24;
     let hour_sec = 60 * 60;
@@ -36,4 +38,55 @@ pub fn parse_color(color_hex: &str) -> Color {
         g: ((color >> 8) & 0xFF) as u8,
         b: (color & 0xFF) as u8,
     }
+}
+
+pub fn get_split_time(idx: i32, splits: &[Option<Duration>]) -> Option<Duration> {
+    if idx < 0 {
+        Some(Duration::from_secs(0))
+    } else {
+        splits[idx as usize]
+    }
+}
+
+pub struct NewGold {
+    pub duration: Duration,
+    pub new: bool,
+}
+
+pub fn get_latest_golds(timer: &TimerState) -> Vec<Option<NewGold>> {
+    let mut golds: Vec<Option<NewGold>> = timer
+        .split_file
+        .golds
+        .iter()
+        .map(|gold| {
+            gold.as_ref().map(|g| NewGold {
+                duration: g.duration,
+                new: false,
+            })
+        })
+        .collect();
+    for i in 0..timer.splits.len() {
+        let curr_split = get_split_time(i as i32, &timer.splits);
+        let prev_split = get_split_time(i as i32 - 1, &timer.splits);
+        if let (Some(curr_split), Some(prev_split)) = (curr_split, prev_split) {
+            let delta = curr_split - prev_split;
+            match golds[i].as_ref() {
+                Some(g) => {
+                    if delta < g.duration {
+                        golds[i] = Some(NewGold {
+                            duration: delta,
+                            new: true,
+                        })
+                    }
+                }
+                None => {
+                    golds[i] = Some(NewGold {
+                        duration: delta,
+                        new: true,
+                    })
+                }
+            }
+        }
+    }
+    golds
 }

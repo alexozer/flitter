@@ -9,7 +9,7 @@ use device_query::{DeviceQuery, DeviceState, Keycode};
 use crate::settings::{self, Action, Settings};
 use crate::split_file::{write_split_file, Gold, Split};
 use crate::timer_state::{TimerMode, TimerState};
-use crate::utils::parse_color;
+use crate::utils::{get_latest_golds, parse_color};
 use crate::{rotty::Renderer, split_file::read_split_file, view};
 
 pub struct Timer {
@@ -140,32 +140,13 @@ impl Timer {
     }
 
     fn save_golds(&mut self) -> anyhow::Result<()> {
-        // Note that we purposely only iterate over completed splits -
-        // golds may be saved even if the run isn't complete
-        for i in 0..self.timer_state.splits.len() {
-            let curr_duration = if i == 0 {
-                self.timer_state.splits[0]
-            } else {
-                match (self.timer_state.splits[i], self.timer_state.splits[i - 1]) {
-                    (Some(curr), Some(prev)) => Some(curr - prev),
-                    _ => None,
-                }
-            };
-            let gold_duration = self.timer_state.split_file.golds[i]
-                .as_ref()
-                .map(|g| g.duration);
+        let latest_golds = get_latest_golds(&self.timer_state);
 
-            match (curr_duration, gold_duration) {
-                (Some(curr_duration), Some(gold_duration)) => {
-                    self.timer_state.split_file.golds[i] = Some(Gold {
-                        duration: curr_duration.min(gold_duration),
-                    });
-                }
-                (None, Some(duration)) => {
-                    self.timer_state.split_file.golds[i] = Some(Gold { duration })
-                }
-                (Some(_), None) | (None, None) => {}
-            }
+        for (i, gold) in latest_golds.iter().enumerate() {
+            let file_golds = &mut self.timer_state.split_file.golds;
+            file_golds[i] = gold.as_ref().map(|g| Gold {
+                duration: g.duration,
+            });
         }
 
         write_split_file(&self.timer_state.split_file)?;
