@@ -60,7 +60,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         .map(|i| get_split_row(timer, i as u32, theme))
         .collect();
 
-    let timer_block = get_big_text(&format_duration(elapsed, 2));
+    let timer_block = get_big_text(&format_duration(elapsed, 2, false));
     let timer_block = timer_block.left_pad(TIMER_WIDTH);
     let timer_block = timer_block.fg_color(parse_color(theme.ahead_gain));
 
@@ -77,6 +77,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     sections.push(spacer_block.clone());
     sections.push(timer_block);
     sections.push(spacer_block);
+    sections.push(get_prev_segment_block(timer));
     sections.push(get_sum_of_best_block(timer));
     Block::vcat(sections)
 }
@@ -86,13 +87,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
     let delta_col = get_delta_block(timer, idx, theme);
 
-    let pb_splits: Vec<Option<Duration>> = timer
-        .split_file
-        .personal_best
-        .splits
-        .iter()
-        .map(|opt_split| opt_split.as_ref().map(|s| s.time))
-        .collect();
+    let pb_splits = get_pb_splits(timer);
 
     let curr_time;
     let prev_time;
@@ -105,11 +100,11 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     }
 
     let sgmt_text = match (prev_time, curr_time) {
-        (Some(prev_time), Some(curr_time)) => format_duration(curr_time - prev_time, 2),
+        (Some(prev_time), Some(curr_time)) => format_duration(curr_time - prev_time, 2, false),
         _ => "-".to_string(),
     };
     let time_text = match curr_time {
-        Some(curr_time) => format_duration(curr_time, 2),
+        Some(curr_time) => format_duration(curr_time, 2, false),
         None => "-".to_string(),
     };
 
@@ -137,6 +132,43 @@ fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     Image::new("-", COL_WIDTH, TextAlign::Right).build()
 }
 
+fn get_pb_splits(timer: &TimerState) -> Vec<Option<Duration>> {
+    timer
+        .split_file
+        .personal_best
+        .splits
+        .iter()
+        .map(|opt_split| opt_split.as_ref().map(|s| s.time))
+        .collect()
+}
+
+fn get_prev_segment_block(timer: &TimerState) -> Block {
+    let curr_split = get_split_time(timer.splits.len() as i32 - 1, &timer.splits);
+    let prev_split = get_split_time(timer.splits.len() as i32 - 2, &timer.splits);
+    let pb_splits = get_pb_splits(timer);
+    let curr_pb = get_split_time(timer.splits.len() as i32 - 1, &pb_splits);
+    let prev_pb = get_split_time(timer.splits.len() as i32 - 2, &pb_splits);
+
+    let s = if let (Some(curr_split), Some(prev_split), Some(curr_pb), Some(prev_pb)) =
+        (curr_split, prev_split, curr_pb, prev_pb)
+    {
+        // Do math in signed milliseconds because Duration is unsigned
+        let curr_split_ms = curr_split.as_millis() as i32;
+        let prev_split_ms = prev_split.as_millis() as i32;
+        let curr_pb_ms = curr_pb.as_millis() as i32;
+        let prev_pb_ms = prev_pb.as_millis() as i32;
+        let delta_ms = (curr_split_ms - curr_pb_ms) - (prev_split_ms - prev_pb_ms);
+        let delta_dur = Duration::from_millis(delta_ms.unsigned_abs() as u64);
+        format_duration(delta_dur, 2, delta_ms < 0)
+    } else {
+        "-".to_string()
+    };
+
+    let label_col = Image::new("Previous Segment", TIMER_WIDTH / 2, TextAlign::Left).build();
+    let prev_seg_col = Image::new(&s, TIMER_WIDTH - TIMER_WIDTH / 2, TextAlign::Right).build();
+    label_col.horiz(prev_seg_col)
+}
+
 fn get_sum_of_best_block(timer: &TimerState) -> Block {
     let latest_golds = get_latest_golds(timer);
     let sob_text = if latest_golds.iter().all(Option::is_some) {
@@ -144,7 +176,7 @@ fn get_sum_of_best_block(timer: &TimerState) -> Block {
             .iter()
             .map(|g| g.as_ref().unwrap().duration)
             .sum();
-        format_duration(sob, 2)
+        format_duration(sob, 2, false)
     } else {
         "-".to_string()
     };

@@ -49,7 +49,7 @@ mod duration_format {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&format_duration(*duration, 3))
+        serializer.serialize_str(&format_duration(*duration, 3, false))
     }
 
     static DURATION_REGEX: LazyLock<Regex> = LazyLock::new(|| {

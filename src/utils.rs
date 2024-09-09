@@ -1,10 +1,10 @@
-use std::time::Duration;
+use std::{cmp::Ordering, time::Duration};
 
 use crossterm::style::Color;
 
 use crate::timer_state::TimerState;
 
-pub fn format_duration(duration: Duration, ms_digits: u32) -> String {
+pub fn format_duration(duration: Duration, ms_digits: u32, neg: bool) -> String {
     let day_sec = 60 * 60 * 24;
     let hour_sec = 60 * 60;
     let minute_sec = 60;
@@ -16,16 +16,21 @@ pub fn format_duration(duration: Duration, ms_digits: u32) -> String {
     let seconds = duration_secs % minute_sec;
     let milliseconds = duration.subsec_millis();
 
+    let neg_prefix = if neg { "-" } else { "" };
+
     let s = match (days, hours, minutes, seconds, milliseconds) {
-        (0, 0, 0, _, _) => format!("{}.{:03}", seconds, milliseconds),
-        (0, 0, _, _, _) => format!("{}:{:02}.{:03}", minutes, seconds, milliseconds),
+        (0, 0, 0, _, _) => format!("{}{}.{:03}", neg_prefix, seconds, milliseconds),
+        (0, 0, _, _, _) => format!(
+            "{}{}:{:02}.{:03}",
+            neg_prefix, minutes, seconds, milliseconds
+        ),
         (0, _, _, _, _) => format!(
-            "{}:{:02}:{:02}.{:03}",
-            hours, minutes, seconds, milliseconds
+            "{}{}:{:02}:{:02}.{:03}",
+            neg_prefix, hours, minutes, seconds, milliseconds
         ),
         _ => format!(
-            "{}:{:02}:{:02}:{:02}.{:03}",
-            days, hours, minutes, seconds, milliseconds
+            "{}{}:{:02}:{:02}:{:02}.{:03}",
+            neg_prefix, days, hours, minutes, seconds, milliseconds
         ),
     };
     String::from(&s[..(s.len() - (3 - ms_digits as usize))])
@@ -41,10 +46,10 @@ pub fn parse_color(color_hex: &str) -> Color {
 }
 
 pub fn get_split_time(idx: i32, splits: &[Option<Duration>]) -> Option<Duration> {
-    if idx < 0 {
-        Some(Duration::from_secs(0))
-    } else {
-        splits[idx as usize]
+    match idx.cmp(&0) {
+        Ordering::Less => None,
+        Ordering::Equal => Some(Duration::from_secs(0)),
+        Ordering::Greater => splits[idx as usize],
     }
 }
 
