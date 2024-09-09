@@ -63,10 +63,6 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         .map(|i| get_split_row(timer, i as u32, theme, &summary))
         .collect();
 
-    let timer_block = get_big_text(&format_duration(elapsed, 2, false, false));
-    let timer_block = timer_block.left_pad(TIMER_WIDTH);
-    let timer_block = timer_block.fg_color(parse_color(theme.ahead_gain));
-
     let mut sections = vec![
         title_block,
         category_block,
@@ -78,11 +74,36 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     sections.extend(split_rows);
     sections.push(line_sep);
     sections.push(spacer_block.clone());
-    sections.push(timer_block);
+    sections.push(get_big_timer(timer, theme, &summary, elapsed));
     sections.push(spacer_block);
     sections.push(get_prev_segment_block(timer, theme, &summary));
     sections.push(get_sum_of_best_block(&summary));
     Block::vcat(sections)
+}
+
+fn get_big_timer(
+    timer: &TimerState,
+    theme: &Theme,
+    summary: &[SegSummary],
+    elapsed: Duration,
+) -> Block {
+    let color = match timer.mode {
+        TimerMode::Initial => parse_color(theme.ahead_gain),
+        TimerMode::Running { start_time: _ } => {
+            get_delta_color(timer.splits.len() as u32, theme, summary)
+        }
+        TimerMode::Finished { start_time: _ } => {
+            if summary[summary.len() - 1].live_delta_neg {
+                get_rainbow_color(timer)
+            } else {
+                parse_color(theme.behind_lose)
+            }
+        }
+    };
+
+    get_big_text(&format_duration(elapsed, 2, false, false))
+        .left_pad(TIMER_WIDTH)
+        .fg_color(color)
 }
 
 fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
@@ -132,6 +153,27 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
     bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
 }
 
+fn get_delta_color(idx: u32, theme: &Theme, summary: &[SegSummary]) -> Color {
+    if summary[idx as usize].live_delta.is_some() {
+        let delta_neg = summary[idx as usize].live_delta_neg;
+        let gain_neg = if summary[idx as usize].gained.is_some() {
+            summary[idx as usize].gained_neg
+        } else {
+            delta_neg
+        };
+
+        let color_str = match (delta_neg, gain_neg) {
+            (true, true) => theme.ahead_gain,
+            (true, false) => theme.ahead_lose,
+            (false, true) => theme.behind_gain,
+            (false, false) => theme.behind_lose,
+        };
+        parse_color(color_str)
+    } else {
+        parse_color(theme.ahead_gain)
+    }
+}
+
 fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
     if let Some(delta) = summary[idx as usize].live_delta {
         // If delta is for the upcoming split:
@@ -152,23 +194,14 @@ fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSu
         };
 
         if show {
-            let delta_neg = summary[idx as usize].live_delta_neg;
-            let gain_neg = if summary[idx as usize].gained.is_some() {
-                summary[idx as usize].gained_neg
+            let dur_str = format_duration(delta, 2, summary[idx as usize].live_delta_neg, true);
+            let color = if summary[idx as usize].is_gold_new {
+                get_rainbow_color(timer)
             } else {
-                delta_neg
+                get_delta_color(idx, theme, summary)
             };
-
-            let color_str = match (delta_neg, gain_neg) {
-                (true, true) => theme.ahead_gain,
-                (true, false) => theme.ahead_lose,
-                (false, true) => theme.behind_gain,
-                (false, false) => theme.behind_lose,
-            };
-
-            let dur_str = format_duration(delta, 2, delta_neg, true);
             Image::new(&dur_str, COL_WIDTH, TextAlign::Right)
-                .fg_color(parse_color(color_str))
+                .fg_color(color)
                 .build()
         } else {
             Image::new(" ", COL_WIDTH, TextAlign::Left).build()
@@ -218,4 +251,35 @@ fn get_sum_of_best_block(summary: &[SegSummary]) -> Block {
     let label_col = Image::new("Sum of Best Segments", TIMER_WIDTH / 2, TextAlign::Left).build();
     let sob_col = Image::new(&sob_text, TIMER_WIDTH - TIMER_WIDTH / 2, TextAlign::Right).build();
     label_col.horiz(sob_col)
+}
+
+fn hsl_to_color(h: f64, s: f64, l: f64) -> Color {
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
+    let m = l - c / 2.0;
+
+    let (r, g, b) = match (h * 6.0).floor() as i32 {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+
+    Color::Rgb {
+        r: ((r + m) * 255.0) as u8,
+        g: ((g + m) * 255.0) as u8,
+        b: ((b + m) * 255.0) as u8,
+    }
+}
+
+fn get_rainbow_color(timer: &TimerState) -> Color {
+    let loop_duration = Duration::from_secs(3);
+    let t = timer
+        .anim_ref_time
+        .elapsed()
+        .div_duration_f64(loop_duration)
+        % 1.0;
+    hsl_to_color(t, 1.0, 0.6)
 }

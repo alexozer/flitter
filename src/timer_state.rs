@@ -13,4 +13,5 @@ pub struct TimerState {
     pub split_file: SplitFile,
     pub mode: TimerMode,
     pub splits: Vec<Option<Duration>>,
+    pub anim_ref_time: Instant,
 }

@@ -37,6 +37,7 @@ impl Timer {
                 split_file,
                 splits: Vec::new(),
                 mode: TimerMode::Initial,
+                anim_ref_time: Instant::now(),
             },
             settings,
             prev_keys: HashSet::new(),
