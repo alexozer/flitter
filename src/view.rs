@@ -7,12 +7,14 @@ use crate::{
     rotty::{Block, Image, TextAlign},
     settings::Theme,
     timer_state::{TimerMode, TimerState},
-    utils::{format_duration, get_latest_golds, get_split_time, parse_color},
+    utils::{format_duration, get_run_summary, parse_color, SegSummary},
 };
 
 static TIMER_WIDTH: u16 = 48;
 static COL_WIDTH: u16 = 12;
 pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
+    let summary = get_run_summary(timer);
+
     let elapsed = match timer.mode {
         TimerMode::Initial => Duration::from_secs(0),
         TimerMode::Running { start_time } => start_time.elapsed(),
@@ -57,7 +59,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     .build();
 
     let split_rows: Vec<Block> = (0..timer.split_file.split_names.len())
-        .map(|i| get_split_row(timer, i as u32, theme))
+        .map(|i| get_split_row(timer, i as u32, theme, &summary))
         .collect();
 
     let timer_block = get_big_text(&format_duration(elapsed, 2, false, false));
@@ -77,41 +79,40 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     sections.push(spacer_block.clone());
     sections.push(timer_block);
     sections.push(spacer_block);
-    sections.push(get_prev_segment_block(timer, theme));
-    sections.push(get_sum_of_best_block(timer));
+    sections.push(get_prev_segment_block(timer, theme, &summary));
+    sections.push(get_sum_of_best_block(timer, &summary));
     Block::vcat(sections)
 }
 
-fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
+fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
     let split_name = &timer.split_file.split_names[idx as usize];
     let name_col = Image::new(split_name, COL_WIDTH, TextAlign::Left).build();
-    let delta_col = get_delta_block(timer, idx, theme);
 
-    let pb_splits = get_pb_splits(timer);
-
-    let curr_time;
-    let prev_time;
-    if (idx as usize) < timer.splits.len() {
-        curr_time = get_split_time(idx as i32, &timer.splits);
-        prev_time = get_split_time(idx as i32 - 1, &timer.splits);
+    // Build segment text
+    let seg_dur = if (idx as usize) < timer.splits.len() {
+        summary[idx as usize].live_seg
     } else {
-        curr_time = get_split_time(idx as i32, &pb_splits);
-        prev_time = get_split_time(idx as i32 - 1, &pb_splits);
-    }
-
-    let sgmt_text = match (prev_time, curr_time) {
-        (Some(prev_time), Some(curr_time)) => {
-            format_duration(curr_time - prev_time, 2, false, false)
-        }
-        _ => "-".to_string(),
+        summary[idx as usize].pb_seg
     };
-    let time_text = match curr_time {
-        Some(curr_time) => format_duration(curr_time, 2, false, false),
+    let seg_text = match seg_dur {
+        Some(seg_dur) => format_duration(seg_dur, 2, false, false),
         None => "-".to_string(),
     };
 
-    let sgmt_col = Image::new(&sgmt_text, COL_WIDTH, TextAlign::Right).build();
-    let time_col = Image::new(&time_text, COL_WIDTH, TextAlign::Right).build();
+    // Build split text
+    let split_dur = if (idx as usize) < timer.splits.len() {
+        summary[idx as usize].live_split
+    } else {
+        summary[idx as usize].pb_split
+    };
+    let split_text = match split_dur {
+        Some(split_dur) => format_duration(split_dur, 2, false, false),
+        None => "-".to_string(),
+    };
+
+    let seg_col = Image::new(&seg_text, COL_WIDTH, TextAlign::Right).build();
+    let split_col = Image::new(&split_text, COL_WIDTH, TextAlign::Right).build();
+    let delta_col = get_delta_block(timer, idx, theme, summary);
 
     let running = matches!(timer.mode, TimerMode::Running { start_time: _ });
     let bg_color = if running && idx as usize == timer.splits.len() {
@@ -126,51 +127,35 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
     )
     .bg_color(parse_color(bg_color))
     .build();
-    bg.stack(Block::hcat(vec![name_col, delta_col, sgmt_col, time_col]))
+
+    bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
 }
 
-fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme) -> Block {
+fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
     // TODO
     Image::new("-", COL_WIDTH, TextAlign::Right).build()
 }
 
-fn get_pb_splits(timer: &TimerState) -> Vec<Option<Duration>> {
-    timer
-        .split_file
-        .personal_best
-        .splits
-        .iter()
-        .map(|opt_split| opt_split.as_ref().map(|s| s.time))
-        .collect()
-}
+fn get_prev_segment_block(timer: &TimerState, theme: &Theme, summary: &[SegSummary]) -> Block {
+    let gained_dur = if timer.splits.is_empty() {
+        None
+    } else {
+        summary[timer.splits.len() - 1].gained
+    };
 
-fn get_prev_segment_block(timer: &TimerState, theme: &Theme) -> Block {
-    let curr_split = get_split_time(timer.splits.len() as i32 - 1, &timer.splits);
-    let prev_split = get_split_time(timer.splits.len() as i32 - 2, &timer.splits);
-    let pb_splits = get_pb_splits(timer);
-    let curr_pb = get_split_time(timer.splits.len() as i32 - 1, &pb_splits);
-    let prev_pb = get_split_time(timer.splits.len() as i32 - 2, &pb_splits);
-
-    let color: Color;
-    let s = if let (Some(curr_split), Some(prev_split), Some(curr_pb), Some(prev_pb)) =
-        (curr_split, prev_split, curr_pb, prev_pb)
-    {
-        // Do math in signed milliseconds because Duration is unsigned
-        let curr_split_ms = curr_split.as_millis() as i32;
-        let prev_split_ms = prev_split.as_millis() as i32;
-        let curr_pb_ms = curr_pb.as_millis() as i32;
-        let prev_pb_ms = prev_pb.as_millis() as i32;
-        let delta_ms = (curr_split_ms - curr_pb_ms) - (prev_split_ms - prev_pb_ms);
-        let delta_dur = Duration::from_millis(delta_ms.unsigned_abs() as u64);
-        color = if delta_ms <= 0 {
+    let color;
+    let s;
+    if let Some(gained_dur) = gained_dur {
+        let neg = summary[timer.splits.len() - 1].gained_neg;
+        s = format_duration(gained_dur, 2, neg, true);
+        color = if neg {
             parse_color(theme.ahead_gain)
         } else {
             parse_color(theme.behind_lose)
         };
-        format_duration(delta_dur, 2, delta_ms <= 0, true)
     } else {
         color = parse_color(theme.normal_text);
-        "-".to_string()
+        s = "-".to_string();
     };
 
     let label_col = Image::new("Previous Segment", TIMER_WIDTH / 2, TextAlign::Left).build();
@@ -180,13 +165,9 @@ fn get_prev_segment_block(timer: &TimerState, theme: &Theme) -> Block {
     label_col.horiz(prev_seg_col)
 }
 
-fn get_sum_of_best_block(timer: &TimerState) -> Block {
-    let latest_golds = get_latest_golds(timer);
-    let sob_text = if latest_golds.iter().all(Option::is_some) {
-        let sob = latest_golds
-            .iter()
-            .map(|g| g.as_ref().unwrap().duration)
-            .sum();
+fn get_sum_of_best_block(timer: &TimerState, summary: &[SegSummary]) -> Block {
+    let sob_text = if summary.iter().all(|seg| seg.gold.is_some()) {
+        let sob = summary.iter().map(|seg| seg.gold.as_ref().unwrap()).sum();
         format_duration(sob, 2, false, false)
     } else {
         "-".to_string()

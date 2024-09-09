@@ -49,78 +49,27 @@ pub fn parse_color(color_hex: &str) -> Color {
     }
 }
 
-pub fn get_split_time(idx: i32, splits: &[Option<Duration>]) -> Option<Duration> {
-    match idx.cmp(&-1) {
-        Ordering::Less => None,
-        Ordering::Equal => Some(Duration::from_secs(0)),
-        Ordering::Greater => splits[idx as usize],
-    }
-}
-
-pub struct NewGold {
-    pub duration: Duration,
-    pub new: bool,
-}
-
-pub fn get_latest_golds(timer: &TimerState) -> Vec<Option<NewGold>> {
-    let mut golds: Vec<Option<NewGold>> = timer
-        .split_file
-        .golds
-        .iter()
-        .map(|gold| {
-            gold.as_ref().map(|g| NewGold {
-                duration: g.duration,
-                new: false,
-            })
-        })
-        .collect();
-    for i in 0..timer.splits.len() {
-        let curr_split = get_split_time(i as i32, &timer.splits);
-        let prev_split = get_split_time(i as i32 - 1, &timer.splits);
-        if let (Some(curr_split), Some(prev_split)) = (curr_split, prev_split) {
-            let delta = curr_split - prev_split;
-            match golds[i].as_ref() {
-                Some(g) => {
-                    if delta < g.duration {
-                        golds[i] = Some(NewGold {
-                            duration: delta,
-                            new: true,
-                        })
-                    }
-                }
-                None => {
-                    golds[i] = Some(NewGold {
-                        duration: delta,
-                        new: true,
-                    })
-                }
-            }
-        }
-    }
-    golds
-}
-
 #[derive(Default, Clone)]
-struct SegSummary {
-    live_split: Option<Duration>,
-    live_seg: Option<Duration>,
+pub struct SegSummary {
+    pub live_split: Option<Duration>,
+    pub live_seg: Option<Duration>,
 
     // How far ahead/behind this split is compared to PB
-    live_delta: Option<Duration>,
-    live_delta_neg: bool,
+    pub live_delta: Option<Duration>,
+    pub live_delta_neg: bool,
 
     // Time gained or lost this split relative to PB
-    gained: Option<Duration>,
-    gained_neg: bool,
+    pub gained: Option<Duration>,
+    pub gained_neg: bool,
 
-    pb_split: Option<Duration>,
-    pb_seg: Option<Duration>,
+    pub pb_split: Option<Duration>,
+    pub pb_seg: Option<Duration>,
 
-    gold: Option<Duration>,
-    is_gold_new: bool,
+    pub gold: Option<Duration>,
+    pub is_gold_new: bool,
 }
 
-fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
+pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     let mut summary = vec![SegSummary::default(); timer.split_file.split_names.len()];
     let pb = &timer.split_file.personal_best;
 
@@ -144,11 +93,8 @@ fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     for (i, split) in timer.splits.iter().enumerate() {
         summary[i].live_split = split.clone();
     }
-    match timer.mode {
-        TimerMode::Running { start_time } => {
-            summary[timer.splits.len()].live_split = Some(start_time.elapsed());
-        }
-        _ => {}
+    if let TimerMode::Running { start_time } = timer.mode {
+        summary[timer.splits.len()].live_split = Some(start_time.elapsed());
     }
 
     // Calculate live segment times

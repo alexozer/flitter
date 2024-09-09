@@ -9,7 +9,7 @@ use device_query::{DeviceQuery, DeviceState, Keycode};
 use crate::settings::{self, Action, Settings};
 use crate::split_file::{write_split_file, Gold, Split};
 use crate::timer_state::{TimerMode, TimerState};
-use crate::utils::{get_latest_golds, parse_color};
+use crate::utils::{get_run_summary, parse_color};
 use crate::{rotty::Renderer, split_file::read_split_file, view};
 
 pub struct Timer {
@@ -140,13 +140,11 @@ impl Timer {
     }
 
     fn save_golds(&mut self) -> anyhow::Result<()> {
-        let latest_golds = get_latest_golds(&self.timer_state);
+        let run_summary = get_run_summary(&self.timer_state);
 
-        for (i, gold) in latest_golds.iter().enumerate() {
+        for (i, seg) in run_summary.iter().enumerate() {
             let file_golds = &mut self.timer_state.split_file.golds;
-            file_golds[i] = gold.as_ref().map(|g| Gold {
-                duration: g.duration,
-            });
+            file_golds[i] = seg.gold.as_ref().map(|&g| Gold { duration: g });
         }
 
         write_split_file(&self.timer_state.split_file)?;
