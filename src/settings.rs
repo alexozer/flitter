@@ -140,7 +140,7 @@ static FLITTER_THEME: Theme = Theme {
     label_text: "#9E9E9B",
     behind_lose: "#F92572",
     behind_gain: "#F87AA6",
-    ahead_lose: "#6EEB78",
+    ahead_lose: "#ABF7B3",
     ahead_gain: "#1CE82C",
     highlight: "#5B60FF",
 };

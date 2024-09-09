@@ -6,6 +6,7 @@ use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
     settings::Theme,
+    split_file::Gold,
     timer_state::{TimerMode, TimerState},
     utils::{format_duration, get_run_summary, parse_color, SegSummary},
 };
@@ -112,7 +113,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
 
     let seg_col = Image::new(&seg_text, COL_WIDTH, TextAlign::Right).build();
     let split_col = Image::new(&split_text, COL_WIDTH, TextAlign::Right).build();
-    let delta_col = get_delta_block(idx, theme, summary);
+    let delta_col = get_delta_block(timer, idx, theme, summary);
 
     let running = matches!(timer.mode, TimerMode::Running { start_time: _ });
     let bg_color = if running && idx as usize == timer.splits.len() {
@@ -131,26 +132,47 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
     bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
 }
 
-fn get_delta_block(idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
+fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
     if let Some(delta) = summary[idx as usize].live_delta {
-        let delta_neg = summary[idx as usize].live_delta_neg;
-        let gain_neg = if summary[idx as usize].gained.is_some() {
-            summary[idx as usize].gained_neg
+        // If delta is for the upcoming split:
+        // - Hide until segment time exceeds gold, if both exist
+        // - Hide till split time exceeds PB split time, if both exist
+        // - Else hide indefinitely?
+        let show = if let (Some(seg), Some(gold)) =
+            (summary[idx as usize].live_seg, summary[idx as usize].gold)
+        {
+            seg >= gold
+        } else if let (Some(live_split), Some(pb_split)) = (
+            summary[idx as usize].live_split,
+            summary[idx as usize].pb_split,
+        ) {
+            live_split >= pb_split
         } else {
-            delta_neg
+            true
         };
 
-        let color_str = match (delta_neg, gain_neg) {
-            (true, true) => theme.ahead_gain,
-            (true, false) => theme.ahead_lose,
-            (false, true) => theme.behind_gain,
-            (false, false) => theme.behind_lose,
-        };
+        if show {
+            let delta_neg = summary[idx as usize].live_delta_neg;
+            let gain_neg = if summary[idx as usize].gained.is_some() {
+                summary[idx as usize].gained_neg
+            } else {
+                delta_neg
+            };
 
-        let dur_str = format_duration(delta, 2, delta_neg, true);
-        Image::new(&dur_str, COL_WIDTH, TextAlign::Right)
-            .fg_color(parse_color(color_str))
-            .build()
+            let color_str = match (delta_neg, gain_neg) {
+                (true, true) => theme.ahead_gain,
+                (true, false) => theme.ahead_lose,
+                (false, true) => theme.behind_gain,
+                (false, false) => theme.behind_lose,
+            };
+
+            let dur_str = format_duration(delta, 2, delta_neg, true);
+            Image::new(&dur_str, COL_WIDTH, TextAlign::Right)
+                .fg_color(parse_color(color_str))
+                .build()
+        } else {
+            Image::new(" ", COL_WIDTH, TextAlign::Left).build()
+        }
     } else {
         Image::new("-", COL_WIDTH, TextAlign::Right).build()
     }
