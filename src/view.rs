@@ -80,7 +80,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     sections.push(timer_block);
     sections.push(spacer_block);
     sections.push(get_prev_segment_block(timer, theme, &summary));
-    sections.push(get_sum_of_best_block(timer, &summary));
+    sections.push(get_sum_of_best_block(&summary));
     Block::vcat(sections)
 }
 
@@ -112,7 +112,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
 
     let seg_col = Image::new(&seg_text, COL_WIDTH, TextAlign::Right).build();
     let split_col = Image::new(&split_text, COL_WIDTH, TextAlign::Right).build();
-    let delta_col = get_delta_block(timer, idx, theme, summary);
+    let delta_col = get_delta_block(idx, theme, summary);
 
     let running = matches!(timer.mode, TimerMode::Running { start_time: _ });
     let bg_color = if running && idx as usize == timer.splits.len() {
@@ -131,9 +131,29 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
     bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
 }
 
-fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
-    // TODO
-    Image::new("-", COL_WIDTH, TextAlign::Right).build()
+fn get_delta_block(idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
+    if let Some(delta) = summary[idx as usize].live_delta {
+        let delta_neg = summary[idx as usize].live_delta_neg;
+        let gain_neg = if summary[idx as usize].gained.is_some() {
+            summary[idx as usize].gained_neg
+        } else {
+            delta_neg
+        };
+
+        let color_str = match (delta_neg, gain_neg) {
+            (true, true) => theme.ahead_gain,
+            (true, false) => theme.ahead_lose,
+            (false, true) => theme.behind_gain,
+            (false, false) => theme.behind_lose,
+        };
+
+        let dur_str = format_duration(delta, 2, delta_neg, true);
+        Image::new(&dur_str, COL_WIDTH, TextAlign::Right)
+            .fg_color(parse_color(color_str))
+            .build()
+    } else {
+        Image::new("-", COL_WIDTH, TextAlign::Right).build()
+    }
 }
 
 fn get_prev_segment_block(timer: &TimerState, theme: &Theme, summary: &[SegSummary]) -> Block {
@@ -165,7 +185,7 @@ fn get_prev_segment_block(timer: &TimerState, theme: &Theme, summary: &[SegSumma
     label_col.horiz(prev_seg_col)
 }
 
-fn get_sum_of_best_block(timer: &TimerState, summary: &[SegSummary]) -> Block {
+fn get_sum_of_best_block(summary: &[SegSummary]) -> Block {
     let sob_text = if summary.iter().all(|seg| seg.gold.is_some()) {
         let sob = summary.iter().map(|seg| seg.gold.as_ref().unwrap()).sum();
         format_duration(sob, 2, false, false)
