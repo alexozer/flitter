@@ -167,7 +167,7 @@ fn get_prev_segment_block(timer: &TimerState, theme: &Theme) -> Block {
         } else {
             parse_color(theme.behind_lose)
         };
-        format_duration(delta_dur, 2, delta_ms < 0, true)
+        format_duration(delta_dur, 2, delta_ms <= 0, true)
     } else {
         color = parse_color(theme.normal_text);
         "-".to_string()
