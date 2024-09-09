@@ -4,7 +4,7 @@ use crossterm::style::Color;
 
 use crate::timer_state::TimerState;
 
-pub fn format_duration(duration: Duration, ms_digits: u32, neg: bool) -> String {
+pub fn format_duration(duration: Duration, ms_digits: u32, neg: bool, show_plus: bool) -> String {
     let day_sec = 60 * 60 * 24;
     let hour_sec = 60 * 60;
     let minute_sec = 60;
@@ -17,20 +17,24 @@ pub fn format_duration(duration: Duration, ms_digits: u32, neg: bool) -> String 
     let milliseconds = duration.subsec_millis();
 
     let neg_prefix = if neg { "-" } else { "" };
+    let plus_prefix = if !neg && show_plus { "+" } else { "" };
 
     let s = match (days, hours, minutes, seconds, milliseconds) {
-        (0, 0, 0, _, _) => format!("{}{}.{:03}", neg_prefix, seconds, milliseconds),
+        (0, 0, 0, _, _) => format!(
+            "{}{}{}.{:03}",
+            plus_prefix, neg_prefix, seconds, milliseconds
+        ),
         (0, 0, _, _, _) => format!(
-            "{}{}:{:02}.{:03}",
-            neg_prefix, minutes, seconds, milliseconds
+            "{}{}{}:{:02}.{:03}",
+            plus_prefix, neg_prefix, minutes, seconds, milliseconds
         ),
         (0, _, _, _, _) => format!(
-            "{}{}:{:02}:{:02}.{:03}",
-            neg_prefix, hours, minutes, seconds, milliseconds
+            "{}{}{}:{:02}:{:02}.{:03}",
+            plus_prefix, neg_prefix, hours, minutes, seconds, milliseconds
         ),
         _ => format!(
-            "{}{}:{:02}:{:02}:{:02}.{:03}",
-            neg_prefix, days, hours, minutes, seconds, milliseconds
+            "{}{}{}:{:02}:{:02}:{:02}.{:03}",
+            plus_prefix, neg_prefix, days, hours, minutes, seconds, milliseconds
         ),
     };
     String::from(&s[..(s.len() - (3 - ms_digits as usize))])
