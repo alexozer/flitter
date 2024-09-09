@@ -117,12 +117,23 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     }
 
     // Calculate live gained/lost
-    for i in 1..summary.len() {
-        if let (Some(delta1), Some(delta2)) = (summary[i].live_delta, summary[i - 1].live_delta) {
+    for i in 0..summary.len() {
+        let prev_delta = if i == 0 {
+            Some(Duration::from_secs(0))
+        } else {
+            summary[i - 1].live_delta
+        };
+
+        if let (Some(delta1), Some(delta2)) = (summary[i].live_delta, prev_delta) {
+            let prev_delta_neg = if i == 0 {
+                false
+            } else {
+                summary[i - 1].live_delta_neg
+            };
+
             let delta1_ms =
                 delta1.as_millis() as i64 * if summary[i].live_delta_neg { -1 } else { 1 };
-            let delta2_ms =
-                delta2.as_millis() as i64 * if summary[i - 1].live_delta_neg { -1 } else { 1 };
+            let delta2_ms = delta2.as_millis() as i64 * if prev_delta_neg { -1 } else { 1 };
             let gained_ms = delta1_ms - delta2_ms;
             summary[i].gained = Some(Duration::from_millis(gained_ms.unsigned_abs()));
             summary[i].gained_neg = gained_ms < 0;
@@ -130,7 +141,7 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     }
 
     // Calculate golds
-    for i in 0..summary.len() {
+    for i in 0..timer.splits.len() {
         let live_seg = summary[i].live_seg;
         let gold_seg = timer.split_file.golds[i].as_ref().map(|g| g.duration);
         match (live_seg, gold_seg) {
@@ -147,6 +158,10 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
                 summary[i].is_gold_new = false;
             }
         }
+    }
+    for i in timer.splits.len()..summary.len() {
+        summary[i].gold = timer.split_file.golds[i].as_ref().map(|g| g.duration);
+        summary[i].is_gold_new = false;
     }
 
     summary
