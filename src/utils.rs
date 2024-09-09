@@ -46,7 +46,7 @@ pub fn parse_color(color_hex: &str) -> Color {
 }
 
 pub fn get_split_time(idx: i32, splits: &[Option<Duration>]) -> Option<Duration> {
-    match idx.cmp(&0) {
+    match idx.cmp(&-1) {
         Ordering::Less => None,
         Ordering::Equal => Some(Duration::from_secs(0)),
         Ordering::Greater => splits[idx as usize],
