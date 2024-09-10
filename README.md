@@ -49,7 +49,7 @@ sudo dnf install xorg-x11-server-devel
 
 Create your splits:
 
-Copy [`examples/splits.json`](examples/splits.json) somewhere and add your game and split information. Skipped personal best segments and golds and represented by `null`.
+Copy [`examples/splits.json`](/examples/splits.json) somewhere and add your game and split information. Skipped personal best segments and golds and represented by `null`.
 
 Launch Flitter with your splits file:
 
@@ -72,7 +72,7 @@ Keybindings are all global hotkeys; they will work even when the terminal is not
 | `Delete`    | Reset and discard PB and best segments  |
 | `Q`         | Quit (not global hotkey)                |
 
-To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](examples/default-config.json). See the [full list of keys](examples/keys.txt) for which key names you can use.
+To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](/examples/default-config.json). See the [full list of keys](/doc/keys.txt) for which key names you can use.
 
 ## Contributing
 
