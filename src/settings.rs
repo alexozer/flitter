@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use crossterm::style::Color;
 use std::{collections::HashMap, path::Path, sync::LazyLock};
 
 use device_query::Keycode;

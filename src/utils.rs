@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, f64::consts::PI, time::Duration};
+use std::time::Duration;
 
 use crossterm::style::Color;
 
@@ -91,7 +91,7 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
 
     // Calculate live split times
     for (i, split) in timer.splits.iter().enumerate() {
-        summary[i].live_split = split.clone();
+        summary[i].live_split = *split;
     }
     if let TimerMode::Running { start_time } = timer.mode {
         summary[timer.splits.len()].live_split = Some(start_time.elapsed());
@@ -107,6 +107,7 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     }
 
     // Calculate live deltas
+    #[allow(clippy::needless_range_loop)]
     for i in 0..summary.len() {
         if let (Some(live_split), Some(pb_split)) = (summary[i].live_split, summary[i].pb_split) {
             // Do math in signed milliseconds because Duration is unsigned
@@ -141,6 +142,7 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
     }
 
     // Calculate golds
+    #[allow(clippy::needless_range_loop)]
     for i in 0..timer.splits.len() {
         let live_seg = summary[i].live_seg;
         let gold_seg = timer.split_file.golds[i].as_ref().map(|g| g.duration);
@@ -159,6 +161,7 @@ pub fn get_run_summary(timer: &TimerState) -> Vec<SegSummary> {
             }
         }
     }
+    #[allow(clippy::needless_range_loop)]
     for i in timer.splits.len()..summary.len() {
         summary[i].gold = timer.split_file.golds[i].as_ref().map(|g| g.duration);
         summary[i].is_gold_new = false;

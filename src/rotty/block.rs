@@ -21,6 +21,7 @@ pub enum Block {
     Join { dir: JoinDir, blocks: Vec<Block> },
 }
 
+#[allow(dead_code)]
 impl Block {
     pub fn horiz(self, right: Block) -> Block {
         Block::Join {

@@ -6,7 +6,6 @@ use crate::{
     bigtext::get_big_text,
     rotty::{Block, Image, TextAlign},
     settings::Theme,
-    split_file::Gold,
     timer_state::{TimerMode, TimerState},
     utils::{format_duration, get_run_summary, parse_color, SegSummary},
 };
