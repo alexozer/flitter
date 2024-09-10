@@ -2,7 +2,7 @@
 
 A Livesplit-inspired speedrunning split timer for the terminal.
 
-![Animated demo GIF](/doc/demo.gif)
+![Animated demo GIF](/doc/flitter.gif)
 
 ## Features
 
