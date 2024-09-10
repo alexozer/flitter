@@ -1,0 +1,79 @@
+# Flitter
+
+A Livesplit-inspired speedrunning split timer for the terminal.
+
+![Animated demo GIF](/doc/demo.gif)
+
+## Features
+
+- Configurable global hotkeys
+- :rainbow: Animated rainbow best splits
+- Undo and delete split
+- Splits stored in single human-editable file
+- 24-bit terminal color
+- 60 FPS rendering with low CPU usage
+
+## Install
+
+Flitter is designed to work on macOS and Linux (X11). Windows is not currently supported.
+
+To quickly build and install `flitter` from source, [install Rust](https://www.rust-lang.org/tools/install) and then run:
+
+```bash
+cargo install --git https://github.com/alexozer/flitter.git
+```
+
+## Global Hotkeys Setup
+
+### macOS
+
+On recent versions of macOS, on first launch you will be prompted to enable accessibility permissions for your terminal. This is required for flitter to read global hotkeys when not focused. Go to System Settings -> Privacy & Security -> Accessibility and enable the toggle for your terminal.
+
+### Linux
+
+Install the X11 development libraries.
+
+Debian/Ubuntu:
+
+```bash
+sudo apt install libx11-dev
+```
+
+Fedora/RHEL/CentOS:
+
+```bash
+sudo dnf install xorg-x11-server-devel
+```
+
+## Usage
+
+Create your splits:
+
+Copy [`examples/splits.json`](examples/splits.json) somewhere and add your game and split information. Skipped personal best segments and golds and represented by `null`.
+
+Launch Flitter with your splits file:
+
+```bash
+$ flitter path/to/my-splits.json
+```
+
+**Warning:** Don't edit your splits file while Flitter is running, your changes will be overwritten.
+
+### Keybindings
+
+Keybindings are all global hotkeys; they will work even when the terminal is not focused. The following table is the default keybindings:
+
+| Keys        | Action                                  |
+| ----------- | --------------------------------------- |
+| `Space`     | Split                                   |
+| `PageUp`    | Undo split                              |
+| `End        | Delete split                            |
+| `Backspace` | Reset and save PB and best segments     |
+| `Delete`    | Reset and discard PB and best segments  |
+| `Q`         | Quit (not global hotkey)                |
+
+To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](examples/default-config.json). See the [full list of keys](examples/keys.txt) for which key names you can use.
+
+## Contributing
+
+Feel free to make an issue or a pull request!
