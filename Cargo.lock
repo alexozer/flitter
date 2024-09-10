@@ -102,7 +102,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "flitter-rust"
+name = "flitter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
