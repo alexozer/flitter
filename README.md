@@ -17,7 +17,9 @@ A Livesplit-inspired speedrunning split timer for the terminal.
 
 Flitter is designed to work on macOS and Linux (X11). Windows is not currently supported.
 
-To quickly build and install `flitter` from source, [install Rust](https://www.rust-lang.org/tools/install) and then run:
+Head over to the [releases](https://github.com/alexozer/flitter/releases) page for precompiled binaries and an installation one-liner.
+
+Alternatively, to quickly build and install `flitter` from source, [install Rust](https://www.rust-lang.org/tools/install) and then run:
 
 ```bash
 cargo install --git https://github.com/alexozer/flitter.git
