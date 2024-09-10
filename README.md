@@ -27,7 +27,7 @@ cargo install --git https://github.com/alexozer/flitter.git
 
 ### macOS
 
-On recent versions of macOS, on first launch you will be prompted to enable accessibility permissions for your terminal. This is required for flitter to read global hotkeys when not focused. Go to System Settings -> Privacy & Security -> Accessibility and enable the toggle for your terminal.
+On recent versions of macOS, on first launch you will be prompted to enable accessibility permissions for your terminal. This is required for Flitter to read global hotkeys when the terminal is not focused. Go to System Settings -> Privacy & Security -> Accessibility and enable the toggle for your terminal.
 
 ### Linux
 
@@ -68,9 +68,9 @@ Keybindings are all global hotkeys; they will work even when the terminal is not
 | `Space`     | Split                                   |
 | `PageUp`    | Undo split                              |
 | `End`       | Delete split                            |
-| `Backspace` | Reset and save PB and best segments     |
-| `Delete`    | Reset and discard PB and best segments  |
-| `Q`         | Quit (not global hotkey)                |
+| `Backspace` | Reset and save PB + best segments       |
+| `Delete`    | Reset and discard PB + best segments    |
+| `Q`         | Quit (not a global hotkey)              |
 
 To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](/examples/default-config.json). See the [full list of keys](/doc/keys.txt) for which key names you can use.
 
