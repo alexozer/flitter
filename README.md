@@ -1,6 +1,6 @@
 # Flitter
 
-A Livesplit-inspired speedrunning split timer for the terminal.
+A LiveSplit-inspired speedrunning split timer for the terminal.
 
 ![Animated demo GIF](/doc/flitter.gif)
 
