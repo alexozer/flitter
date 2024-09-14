@@ -136,18 +136,15 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
     let delta_col = get_delta_block(timer, idx, theme, summary);
 
     let running = matches!(timer.mode, TimerMode::Running { start_time: _ });
-    let bg_color = if running && idx as usize == timer.splits.len() {
-        theme.highlight
-    } else {
-        theme.bg
-    };
-    let bg = Image::new(
+    let mut bg_image = Image::new(
         &" ".repeat(TIMER_WIDTH as usize),
         TIMER_WIDTH,
         TextAlign::Left,
-    )
-    .bg_color(parse_color(bg_color))
-    .build();
+    );
+    if running && idx as usize == timer.splits.len() {
+        bg_image = bg_image.bg_color(parse_color(theme.highlight));
+    }
+    let bg = bg_image.build();
 
     bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
 }

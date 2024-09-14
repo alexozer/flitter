@@ -41,33 +41,40 @@ pub enum ThemeName {
 }
 
 #[derive(Deserialize)]
+#[serde(default)]
 pub struct ParsedSettings {
     pub theme: ThemeName,
     pub global_hotkeys: HashMap<String, Action>,
+    pub draw_background: bool,
+}
+
+impl Default for ParsedSettings {
+    fn default() -> Self {
+        Self {
+            theme: ThemeName::Flitter,
+            global_hotkeys: HashMap::from([
+                ("Space".to_string(), Action::Split),
+                ("PageUp".to_string(), Action::UndoSplit),
+                ("End".to_string(), Action::DeleteSplit),
+                ("Backspace".to_string(), Action::ResetAndSave),
+                ("Delete".to_string(), Action::ResetAndDelete),
+            ]),
+            draw_background: true,
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct Settings {
     pub theme: &'static Theme,
     pub global_hotkeys: HashMap<Keycode, Action>,
+    pub draw_background: bool,
 }
 
-pub static DEFAULT_SETTINGS: LazyLock<Settings> = LazyLock::new(|| Settings {
-    theme: &FLITTER_THEME,
-    global_hotkeys: HashMap::from([
-        (Keycode::Space, Action::Split),
-        (Keycode::PageUp, Action::UndoSplit),
-        (Keycode::End, Action::DeleteSplit),
-        (Keycode::Backspace, Action::ResetAndSave),
-        (Keycode::Delete, Action::ResetAndDelete),
-    ]),
-});
+pub static DEFAULT_SETTINGS: LazyLock<Settings> =
+    LazyLock::new(|| post_parse_settings(&ParsedSettings::default()).unwrap());
 
-pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
-    let file = std::fs::File::open(path)?;
-    let reader = std::io::BufReader::new(file);
-    let parsed: ParsedSettings = serde_json::from_reader(reader)?;
-
+fn post_parse_settings(parsed: &ParsedSettings) -> anyhow::Result<Settings> {
     let theme = match parsed.theme {
         ThemeName::Flitter => &FLITTER_THEME,
     };
@@ -84,5 +91,13 @@ pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
     Ok(Settings {
         theme,
         global_hotkeys,
+        draw_background: parsed.draw_background,
     })
+}
+
+pub fn read_settings_file(path: &Path) -> anyhow::Result<Settings> {
+    let file = std::fs::File::open(path)?;
+    let reader = std::io::BufReader::new(file);
+    let parsed: ParsedSettings = serde_json::from_reader(reader)?;
+    post_parse_settings(&parsed)
 }

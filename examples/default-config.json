@@ -6,5 +6,6 @@
     "End": "DeleteSplit",
     "Backspace": "ResetAndSave",
     "Delete": "ResetAndDelete"
-  }
+  },
+  "draw_background": true
 }

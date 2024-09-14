@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::style::Color;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::settings::{self, Action, Settings};
@@ -61,10 +62,13 @@ impl Timer {
             self.apply_action(action)?;
         }
 
-        self.renderer.set_default_colors(
-            parse_color(self.settings.theme.normal_text),
-            parse_color(self.settings.theme.bg),
-        );
+        let bg_color = if self.settings.draw_background {
+            parse_color(self.settings.theme.bg)
+        } else {
+            Color::Reset
+        };
+        self.renderer
+            .set_default_colors(parse_color(self.settings.theme.normal_text), bg_color);
 
         let block = view::render_view(&self.timer_state, self.settings.theme);
         self.renderer.render(&block)?;
