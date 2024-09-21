@@ -7,7 +7,7 @@ use crate::{
     rotty::{Block, Image, TextAlign},
     settings::Theme,
     timer_state::{TimerMode, TimerState},
-    utils::{format_duration, get_run_summary, parse_color, SegSummary},
+    utils::{format_duration, get_run_summary, parse_color, Prefix, SegSummary, Sign},
 };
 
 static TIMER_WIDTH: u16 = 48;
@@ -100,9 +100,14 @@ fn get_big_timer(
         }
     };
 
-    get_big_text(&format_duration(elapsed, 2, false, false))
-        .left_pad(TIMER_WIDTH)
-        .fg_color(color)
+    get_big_text(&format_duration(
+        elapsed,
+        2,
+        Sign::Positive,
+        Prefix::NoneOrMinus,
+    ))
+    .left_pad(TIMER_WIDTH)
+    .fg_color(color)
 }
 
 fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSummary]) -> Block {
@@ -116,7 +121,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
         summary[idx as usize].pb_seg
     };
     let seg_text = match seg_dur {
-        Some(seg_dur) => format_duration(seg_dur, 2, false, false),
+        Some(seg_dur) => format_duration(seg_dur, 2, Sign::Positive, Prefix::NoneOrMinus),
         None => "-".to_string(),
     };
 
@@ -127,7 +132,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
         summary[idx as usize].pb_split
     };
     let split_text = match split_dur {
-        Some(split_dur) => format_duration(split_dur, 2, false, false),
+        Some(split_dur) => format_duration(split_dur, 2, Sign::Positive, Prefix::NoneOrMinus),
         None => "-".to_string(),
     };
 
@@ -190,7 +195,12 @@ fn get_delta_block(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSu
         };
 
         if show {
-            let dur_str = format_duration(delta, 2, summary[idx as usize].live_delta_neg, true);
+            let dur_str = format_duration(
+                delta,
+                2,
+                (!summary[idx as usize].live_delta_neg).into(),
+                Prefix::PlusOrMinus,
+            );
             let color = if summary[idx as usize].is_gold_new {
                 get_rainbow_color(timer)
             } else {
@@ -218,7 +228,7 @@ fn get_prev_segment_block(timer: &TimerState, theme: &Theme, summary: &[SegSumma
     let s;
     if let Some(gained_dur) = gained_dur {
         let neg = summary[timer.splits.len() - 1].gained_neg;
-        s = format_duration(gained_dur, 2, neg, true);
+        s = format_duration(gained_dur, 2, (!neg).into(), Prefix::PlusOrMinus);
         color = if neg {
             parse_color(theme.ahead_gain)
         } else {
@@ -239,7 +249,7 @@ fn get_prev_segment_block(timer: &TimerState, theme: &Theme, summary: &[SegSumma
 fn get_sum_of_best_block(summary: &[SegSummary]) -> Block {
     let sob_text = if summary.iter().all(|seg| seg.gold.is_some()) {
         let sob = summary.iter().map(|seg| seg.gold.as_ref().unwrap()).sum();
-        format_duration(sob, 2, false, false)
+        format_duration(sob, 2, Sign::Positive, Prefix::NoneOrMinus)
     } else {
         "-".to_string()
     };

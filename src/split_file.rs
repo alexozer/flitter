@@ -43,13 +43,18 @@ mod duration_format {
     use regex::{Match, Regex};
     use serde::{de, Deserializer, Serializer};
 
-    use crate::utils::format_duration;
+    use crate::utils::{format_duration, Prefix, Sign};
 
     pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_str(&format_duration(*duration, 3, false, false))
+        serializer.serialize_str(&format_duration(
+            *duration,
+            3,
+            Sign::Positive,
+            Prefix::NoneOrMinus,
+        ))
     }
 
     static DURATION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
@@ -106,33 +111,33 @@ mod duration_format {
 pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     let file = std::fs::File::open(path)?;
     let reader = std::io::BufReader::new(file);
-    let mut split_set: SplitFile = serde_json::from_reader(reader)?;
-    split_set.file_path = path.to_owned();
+    let mut split_file: SplitFile = serde_json::from_reader(reader)?;
+    split_file.file_path = path.to_owned();
 
-    if split_set.split_names.is_empty() {
+    if split_file.split_names.is_empty() {
         return Err(anyhow!("Split names cannot be empty"));
     }
-    if split_set.personal_best.splits.is_empty() {
+    if split_file.personal_best.splits.is_empty() {
         return Err(anyhow!("Personal best cannot be empty"));
     }
-    if split_set.golds.is_empty() {
+    if split_file.golds.is_empty() {
         return Err(anyhow!("Golds cannot be empty"));
     }
 
-    if split_set.golds.len() != split_set.split_names.len() {
+    if split_file.golds.len() != split_file.split_names.len() {
         return Err(anyhow!("Split name count does not match gold count"));
     }
-    if split_set.personal_best.splits.len() != split_set.split_names.len() {
+    if split_file.personal_best.splits.len() != split_file.split_names.len() {
         return Err(anyhow!(
             "Split name count does not match personal best split count"
         ));
     }
 
-    if split_set.personal_best.splits.last().unwrap().is_none() {
+    if split_file.personal_best.splits.last().unwrap().is_none() {
         return Err(anyhow!("Last split of personal best cannot be null"));
     }
 
-    Ok(split_set)
+    Ok(split_file)
 }
 
 pub fn write_split_file(split_file: &SplitFile) -> anyhow::Result<()> {
