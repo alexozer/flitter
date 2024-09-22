@@ -71,12 +71,14 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         line_sep.clone(),
     ];
     sections.extend(split_rows);
-    sections.push(line_sep);
-    sections.push(spacer_block.clone());
-    sections.push(get_big_timer(timer, theme, &summary, elapsed));
-    sections.push(spacer_block);
-    sections.push(get_prev_segment_block(timer, theme, &summary));
-    sections.push(get_sum_of_best_block(&summary));
+    sections.extend([
+        line_sep,
+        spacer_block.clone(),
+        get_big_timer(timer, theme, &summary, elapsed),
+        spacer_block,
+        get_prev_segment_block(timer, theme, &summary),
+        get_sum_of_best_block(&summary),
+    ]);
     Block::vcat(sections)
 }
 
@@ -88,10 +90,8 @@ fn get_big_timer(
 ) -> Block {
     let color = match timer.mode {
         TimerMode::Initial => parse_color(theme.ahead_gain),
-        TimerMode::Running { start_time: _ } => {
-            get_delta_color(timer.splits.len() as u32, theme, summary)
-        }
-        TimerMode::Finished { start_time: _ } => {
+        TimerMode::Running { .. } => get_delta_color(timer.splits.len() as u32, theme, summary),
+        TimerMode::Finished { .. } => {
             if summary[summary.len() - 1].live_delta_neg {
                 get_rainbow_color(timer)
             } else {
@@ -151,7 +151,7 @@ fn get_split_row(timer: &TimerState, idx: u32, theme: &Theme, summary: &[SegSumm
     }
     let bg = bg_image.build();
 
-    bg.stack(Block::hcat(vec![name_col, delta_col, seg_col, split_col]))
+    bg.stack(Block::hcat([name_col, delta_col, seg_col, split_col]))
 }
 
 fn get_delta_color(idx: u32, theme: &Theme, summary: &[SegSummary]) -> Color {
