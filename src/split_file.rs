@@ -83,11 +83,12 @@ mod duration_format {
                 let caps = DURATION_REGEX
                     .captures(value)
                     .ok_or_else(|| E::custom("invalid duration format"))?;
-                let days = match_or_zero(&caps.get(1))?;
-                let hours = match_or_zero(&caps.get(2))?;
-                let minutes = match_or_zero(&caps.get(3))?;
-                let seconds = match_or_zero(&caps.get(4))?;
-                let milliseconds = match_or_zero(&caps.get(5))?;
+
+                let days = get_or_zero(&caps.get(1))?;
+                let hours = get_or_zero(&caps.get(2))?;
+                let minutes = get_or_zero(&caps.get(3))?;
+                let seconds = get_or_zero(&caps.get(4))?;
+                let milliseconds = get_or_zero_padded(&caps.get(5))?;
 
                 let secs = seconds + (minutes * 60) + (hours * 60 * 60) + (days * 60 * 60 * 24);
                 let dur = Duration::from_secs(secs) + Duration::from_millis(milliseconds);
@@ -98,12 +99,27 @@ mod duration_format {
         deserializer.deserialize_str(DurationVisitor)
     }
 
-    fn match_or_zero<E>(mat: &Option<Match<'_>>) -> Result<u64, E>
+    fn get_or_zero<E>(mat: &Option<Match<'_>>) -> Result<u64, E>
     where
         E: de::Error,
     {
         let num = match mat {
             Some(d) => u64::from_str(d.as_str()).map_err(E::custom)?,
+            None => 0,
+        };
+        Ok(num)
+    }
+
+    fn get_or_zero_padded<E>(mat: &Option<Match<'_>>) -> Result<u64, E>
+    where
+        E: de::Error,
+    {
+        let num = match mat {
+            Some(d) => {
+                let num = u64::from_str(d.as_str()).map_err(E::custom)?;
+                let padded = format!("{:0<3}", num);
+                u64::from_str(&padded).unwrap()
+            }
             None => 0,
         };
         Ok(num)
