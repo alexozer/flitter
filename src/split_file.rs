@@ -116,9 +116,11 @@ mod duration_format {
     {
         let num = match mat {
             Some(d) => {
-                let num = u64::from_str(d.as_str()).map_err(E::custom)?;
-                let padded = format!("{:0<3}", num);
-                u64::from_str(&padded).unwrap()
+                let mut num_str = d.as_str().to_string();
+                while num_str.len() < 3 {
+                    num_str.push('0');
+                }
+                u64::from_str(&num_str).unwrap()
             }
             None => 0,
         };
