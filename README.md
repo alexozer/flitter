@@ -53,7 +53,7 @@ Create your splits:
 
 1. Copy the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) somewhere.
 2. Edit the file (`title`, `category`, `split_names`) to represent your current run.
-3. To insert existing `golds` and `personal_best` manually, see [`examples/splits.json`](/examples/splits.json). Missing/skipped personal best segments and golds and represented by `null`.
+3. (Optional) to insert existing `golds` and `personal_best` manually , see [`examples/splits.json`](/examples/splits.json). Missing/skipped personal best segments and golds and represented by `null`.
 
 Launch Flitter with your splits file:
 
