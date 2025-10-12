@@ -70,6 +70,7 @@ Keybindings are all global hotkeys; they will work even when the terminal is not
 | `Space`     | Split                                   |
 | `PageUp`    | Undo split                              |
 | `End`       | Delete split                            |
+| `P`         | Toggle Pause                            |
 | `Backspace` | Reset and save PB + best segments       |
 | `Delete`    | Reset and discard PB + best segments    |
 | `Q`         | Quit (not a global hotkey)              |
