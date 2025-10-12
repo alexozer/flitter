@@ -184,14 +184,18 @@ impl Timer {
         let pb = &mut self.timer_state.split_file.personal_best;
 
         let curr_time = splits.last().unwrap().unwrap();
-        let pb_time = pb.splits.last().unwrap().as_ref().unwrap().time;
-        if curr_time < pb_time {
+        let pb_time: Option<Duration> = pb.splits.last().unwrap().as_ref().map(|split| split.time); // 'None' if no previous PB
+        let should_save = match pb_time {
+            Some(pb_time) => curr_time < pb_time,
+            None => true,
+        };
+        
+        if should_save {
             pb.splits = splits
                 .iter()
                 .map(|s| s.map(|dur| Split { time: dur }))
                 .collect();
         }
-
         write_split_file(&self.timer_state.split_file)?;
 
         Ok(())

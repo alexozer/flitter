@@ -12,26 +12,29 @@ pub struct SplitFile {
     pub attempts: u32,
     pub completed: u32,
     pub split_names: Vec<String>,
+    #[serde(default)]
     pub golds: Vec<Option<Gold>>,
+    #[serde(default)]
     pub personal_best: PersonalBest,
 
     #[serde(skip)]
     file_path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Gold {
     #[serde(with = "duration_format")]
     pub duration: Duration,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PersonalBest {
     pub attempt: u32,
+    #[serde(default)]
     pub splits: Vec<Option<Split>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Split {
     #[serde(with = "duration_format")]
     pub time: Duration,
@@ -138,10 +141,10 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
         return Err(anyhow!("Split names cannot be empty"));
     }
     if split_file.personal_best.splits.is_empty() {
-        return Err(anyhow!("Personal best cannot be empty"));
+        split_file.personal_best.splits = vec![None; split_file.split_names.len()];
     }
     if split_file.golds.is_empty() {
-        return Err(anyhow!("Golds cannot be empty"));
+        split_file.golds = vec![None; split_file.split_names.len()];
     }
 
     if split_file.golds.len() != split_file.split_names.len() {
@@ -159,35 +162,36 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
         ));
     }
 
-    if split_file.personal_best.splits.last().unwrap().is_none() {
+    if split_file.personal_best.attempt > 0 && split_file.personal_best.splits.last().unwrap().is_none() {
         return Err(anyhow!("Last split of personal best cannot be null"));
     }
+    if split_file.personal_best.attempt > 0 {
+        for i in 0..split_file.split_names.len() {
+            let pb_split = split_file.personal_best.splits[i].as_ref();
+            let gold = split_file.golds[i].as_ref();
+            let prev_pb_split = if i == 0 {
+                None
+            } else {
+                split_file.personal_best.splits[i - 1].as_ref()
+            };
 
-    for i in 0..split_file.split_names.len() {
-        let pb_split = split_file.personal_best.splits[i].as_ref();
-        let gold = split_file.golds[i].as_ref();
-        let prev_pb_split = if i == 0 {
-            None
-        } else {
-            split_file.personal_best.splits[i - 1].as_ref()
-        };
-
-        if let (Some(pb_split), Some(prev_pb_split)) = (pb_split, prev_pb_split) {
-            if pb_split.time < prev_pb_split.time {
-                return Err(anyhow!(
-                    "Split {} ({}) is earlier than previous split",
-                    i + 1,
-                    format_duration(pb_split.time, 3, Sign::Positive, Prefix::NoneOrMinus)
-                ));
-            }
-            if let Some(gold) = gold {
-                let pb_dur = pb_split.time - prev_pb_split.time;
-                if gold.duration > pb_dur {
+            if let (Some(pb_split), Some(prev_pb_split)) = (pb_split, prev_pb_split) {
+                if pb_split.time < prev_pb_split.time {
                     return Err(anyhow!(
-                        "Gold {} ({}) is longer than the PB segment",
+                        "Split {} ({}) is earlier than previous split",
                         i + 1,
-                        format_duration(gold.duration, 3, Sign::Positive, Prefix::NoneOrMinus)
+                        format_duration(pb_split.time, 3, Sign::Positive, Prefix::NoneOrMinus)
                     ));
+                }
+                if let Some(gold) = gold {
+                    let pb_dur = pb_split.time - prev_pb_split.time;
+                    if gold.duration > pb_dur {
+                        return Err(anyhow!(
+                            "Gold {} ({}) is longer than the PB segment",
+                            i + 1,
+                            format_duration(gold.duration, 3, Sign::Positive, Prefix::NoneOrMinus)
+                        ));
+                    }
                 }
             }
         }
