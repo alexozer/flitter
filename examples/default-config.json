@@ -3,6 +3,7 @@
   "global_hotkeys": {
     "Space": "Split",
     "PageUp": "UndoSplit",
+    "P": "Pause",
     "End": "DeleteSplit",
     "Backspace": "ResetAndSave",
     "Delete": "ResetAndDelete"
