@@ -86,6 +86,23 @@ impl Timer {
                 }
                 _ => {}
             },
+            TimerMode::Paused { elapsed_at_pause } => match action {
+                Action::Pause => {
+                    let new_start_time = Instant::now() - elapsed_at_pause;
+                    self.timer_state.mode = TimerMode::Running {
+                        start_time: new_start_time,
+                    };
+                }
+                Action::ResetAndSave => {
+                    self.timer_state.split_file.attempts += 1;
+                    self.save_golds()?;
+                    self.reset_to_initial_mode();
+                }
+                Action::ResetAndDelete => {
+                    self.reset_to_initial_mode();
+                }
+                _ => {}
+            },
             TimerMode::Running { start_time } => match action {
                 Action::Split => {
                     let elapsed = start_time.elapsed();
@@ -116,6 +133,11 @@ impl Timer {
                 }
                 Action::ResetAndDelete => {
                     self.reset_to_initial_mode();
+                }
+                Action::Pause => {
+                    self.timer_state.mode = TimerMode::Paused {
+                        elapsed_at_pause: start_time.elapsed(),
+                    };
                 }
             },
             TimerMode::Finished { start_time } => match action {

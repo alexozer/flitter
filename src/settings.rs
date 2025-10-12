@@ -8,6 +8,7 @@ pub struct Theme {
     pub bg: &'static str,
     pub normal_text: &'static str,
     pub label_text: &'static str,
+    pub paused_text: &'static str,
     pub behind_lose: &'static str,
     pub behind_gain: &'static str,
     pub ahead_lose: &'static str,
@@ -19,6 +20,7 @@ static FLITTER_THEME: Theme = Theme {
     bg: "#060604",
     normal_text: "#F8F8F3",
     label_text: "#9E9E9B",
+    paused_text: "#808080",
     behind_lose: "#F92572",
     behind_gain: "#F87AA6",
     ahead_lose: "#ABF7B3",
@@ -33,6 +35,7 @@ pub enum Action {
     DeleteSplit,
     ResetAndSave,
     ResetAndDelete,
+    Pause,
 }
 
 #[derive(Deserialize)]

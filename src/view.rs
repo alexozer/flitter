@@ -18,6 +18,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
     let elapsed = match timer.mode {
         TimerMode::Initial => Duration::from_secs(0),
         TimerMode::Running { start_time } => start_time.elapsed(),
+        TimerMode::Paused { elapsed_at_pause } => elapsed_at_pause,
         TimerMode::Finished { start_time: _ } => timer.splits.last().unwrap().unwrap(),
     };
 
@@ -91,6 +92,7 @@ fn get_big_timer(
     let color = match timer.mode {
         TimerMode::Initial => parse_color(theme.ahead_gain),
         TimerMode::Running { .. } => get_delta_color(timer.splits.len() as u32, theme, summary),
+        TimerMode::Paused { .. } => parse_color(theme.paused_text),
         TimerMode::Finished { .. } => {
             if summary[summary.len() - 1].live_delta_neg {
                 get_rainbow_color(timer)
