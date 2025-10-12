@@ -51,7 +51,9 @@ sudo dnf install xorg-x11-server-devel
 
 Create your splits:
 
-Copy [`examples/splits.json`](/examples/splits.json) somewhere and add your game and split information. Skipped personal best segments and golds and represented by `null`.
+1. Copy the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) somewhere.
+2. Edit the file (`title`, `category`, `split_names`) to represent your current run.
+3. To insert existing `golds` and `personal_best` manually, see [`examples/splits.json`](/examples/splits.json). Missing/skipped personal best segments and golds and represented by `null`.
 
 Launch Flitter with your splits file:
 
