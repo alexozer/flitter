@@ -59,6 +59,7 @@ impl Default for ParsedSettings {
                 ("Space".to_string(), Action::Split),
                 ("PageUp".to_string(), Action::UndoSplit),
                 ("End".to_string(), Action::DeleteSplit),
+                ("P".to_string(), Action::Pause),
                 ("Backspace".to_string(), Action::ResetAndSave),
                 ("Delete".to_string(), Action::ResetAndDelete),
             ]),
