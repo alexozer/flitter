@@ -191,7 +191,6 @@ impl Timer {
         };
         
         if should_save {
-            pb.attempt = self.timer_state.split_file.attempts;
             pb.splits = splits
                 .iter()
                 .map(|s| s.map(|dur| Split { time: dur }))
