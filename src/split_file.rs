@@ -15,7 +15,7 @@ pub struct SplitFile {
     #[serde(default)]
     pub golds: Vec<Option<Gold>>,
     #[serde(default)]
-    pub personal_best: PersonalBest,
+    pub personal_best: Option<PersonalBest>,
 
     #[serde(skip)]
     file_path: PathBuf,
@@ -27,14 +27,13 @@ pub struct Gold {
     pub duration: Duration,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PersonalBest {
     pub attempt: u32,
-    #[serde(default)]
     pub splits: Vec<Option<Split>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Split {
     #[serde(with = "duration_format")]
     pub time: Duration,
@@ -140,9 +139,7 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
     if split_file.split_names.is_empty() {
         return Err(anyhow!("Split names cannot be empty"));
     }
-    if split_file.personal_best.splits.is_empty() {
-        split_file.personal_best.splits = vec![None; split_file.split_names.len()];
-    }
+
     if split_file.golds.is_empty() {
         split_file.golds = vec![None; split_file.split_names.len()];
     }
@@ -154,25 +151,27 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
             split_file.golds.len()
         ));
     }
-    if split_file.personal_best.splits.len() != split_file.split_names.len() {
-        return Err(anyhow!(
-            "Split name count ({}) does not match personal best split count ({})",
-            split_file.split_names.len(),
-            split_file.personal_best.splits.len(),
-        ));
-    }
+    
+    if let Some(pb) = &split_file.personal_best {
+        if pb.splits.len() != split_file.split_names.len() {
+            return Err(anyhow!(
+                "Split name count ({}) does not match personal best split count ({})",
+                split_file.split_names.len(),
+                pb.splits.len(),
+            ));
+        }
 
-    if split_file.personal_best.attempt > 0 && split_file.personal_best.splits.last().unwrap().is_none() {
-        return Err(anyhow!("Last split of personal best cannot be null"));
-    }
-    if split_file.personal_best.attempt > 0 {
+        if pb.splits.last().unwrap().is_none() {
+            return Err(anyhow!("Last split of personal best cannot be null"));
+        }
+
         for i in 0..split_file.split_names.len() {
-            let pb_split = split_file.personal_best.splits[i].as_ref();
+            let pb_split = pb.splits[i].as_ref();
             let gold = split_file.golds[i].as_ref();
             let prev_pb_split = if i == 0 {
                 None
             } else {
-                split_file.personal_best.splits[i - 1].as_ref()
+                pb.splits[i - 1].as_ref()
             };
 
             if let (Some(pb_split), Some(prev_pb_split)) = (pb_split, prev_pb_split) {
@@ -195,7 +194,7 @@ pub fn read_split_file(path: &Path) -> anyhow::Result<SplitFile> {
                 }
             }
         }
-    }
+    } 
 
     Ok(split_file)
 }
