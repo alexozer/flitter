@@ -49,13 +49,12 @@ sudo dnf install xorg-x11-server-devel
 
 ## Usage
 
-Create your splits:
+To get started, download and rename the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) to a path of your choosing. Edit the file (`title`, `category`, `split_names`) to represent your current run.
 
-1. Copy the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) somewhere.
-2. Edit the file (`title`, `category`, `split_names`) to represent your current run.
-3. (Optional) to insert existing `golds` and `personal_best` manually , see [`examples/splits.json`](/examples/splits.json). Missing/skipped personal best segments and golds are represented by `null`.
 
-Launch Flitter with your splits file:
+All other fields (e.g. `golds`, `personal_best`) are optional and updated automatically as you complete your runs. See [`examples/splits.json`](/examples/splits.json) for an example of populated file. 
+
+Launch Flitter by providing the path to your splits file:
 
 ```bash
 $ flitter path/to/my-splits.json

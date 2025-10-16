@@ -9,7 +9,9 @@ use crate::utils::{format_duration, Prefix, Sign};
 pub struct SplitFile {
     pub title: String,
     pub category: String,
+    #[serde(default)]
     pub attempts: u32,
+    #[serde(default)]
     pub completed: u32,
     pub split_names: Vec<String>,
     #[serde(default)]
