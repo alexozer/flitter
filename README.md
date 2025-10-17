@@ -49,11 +49,12 @@ sudo dnf install xorg-x11-server-devel
 
 ## Usage
 
-Create your splits:
+To get started, download and rename the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) to a path of your choosing. Edit the file (`title`, `category`, `split_names`) to represent your current run.
 
-Copy [`examples/splits.json`](/examples/splits.json) somewhere and add your game and split information. Skipped personal best segments and golds and represented by `null`.
 
-Launch Flitter with your splits file:
+All other fields (e.g. `golds`, `personal_best`) are optional and updated automatically as you complete your runs. See [`examples/splits.json`](/examples/splits.json) for an example of a fully populated file, if you have existing splits you'd like to migrate.
+
+Launch Flitter by providing the path to your splits file:
 
 ```bash
 $ flitter path/to/my-splits.json
@@ -65,17 +66,17 @@ $ flitter path/to/my-splits.json
 
 Keybindings are all global hotkeys; they will work even when the terminal is not focused. The following table is the default keybindings:
 
-| Keys        | Action                                  |
-| ----------- | --------------------------------------- |
-| `Space`     | Split                                   |
-| `PageUp`    | Undo split                              |
-| `End`       | Delete split                            |
-| `P`         | Toggle Pause                            |
-| `Backspace` | Reset and save PB + best segments       |
-| `Delete`    | Reset and discard PB + best segments    |
-| `Q`         | Quit (not a global hotkey)              |
+| Keys        | Action                               |
+| ----------- | ------------------------------------ |
+| `Space`     | Split                                |
+| `PageUp`    | Undo split                           |
+| `End`       | Delete split                         |
+| `P`         | Toggle Pause                         |
+| `Backspace` | Reset and save PB + best segments    |
+| `Delete`    | Reset and discard PB + best segments |
+| `Q`         | Quit (not a global hotkey)           |
 
-To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](/examples/default-config.json). See the [full list of keys](/doc/keys.txt) for which key names you can use.
+To change them, create `$HOME/.config/flitter-timer/config.json` and populate it with [the example config](/examples/default_config.json). See the [full list of keys](/doc/keys.txt) for which key names you can use.
 
 ## Contributing
 

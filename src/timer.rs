@@ -8,7 +8,7 @@ use crossterm::style::Color;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::settings::{self, Action, Settings};
-use crate::split_file::{write_split_file, Gold, Split};
+use crate::split_file::{write_split_file, Gold, PersonalBest, Split};
 use crate::timer_state::{TimerMode, TimerState};
 use crate::utils::{get_run_summary, parse_color};
 use crate::{rotty::Renderer, split_file::read_split_file, view};
@@ -181,17 +181,23 @@ impl Timer {
 
     fn save_personal_best(&mut self) -> anyhow::Result<()> {
         let splits = &self.timer_state.splits;
-        let pb = &mut self.timer_state.split_file.personal_best;
-
         let curr_time = splits.last().unwrap().unwrap();
-        let pb_time = pb.splits.last().unwrap().as_ref().unwrap().time;
-        if curr_time < pb_time {
-            pb.splits = splits
-                .iter()
-                .map(|s| s.map(|dur| Split { time: dur }))
-                .collect();
-        }
 
+        let should_save = match &self.timer_state.split_file.personal_best {
+            Some(pb) => {
+                let pb_time = pb.splits.last().unwrap().as_ref().unwrap().time;
+                curr_time < pb_time
+            }
+            None => true, 
+        };
+
+        if should_save {
+            let pb = PersonalBest {
+                attempt: self.timer_state.split_file.attempts,
+                splits: splits.iter().map(|s| s.map(|dur| Split { time: dur })).collect(),
+            };
+            self.timer_state.split_file.personal_best = Some(pb);
+        }
         write_split_file(&self.timer_state.split_file)?;
 
         Ok(())
