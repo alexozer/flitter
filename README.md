@@ -47,6 +47,12 @@ Fedora/RHEL/CentOS:
 sudo dnf install xorg-x11-server-devel
 ```
 
+[Nix / NixOS](https://search.nixos.org/packages?show=flitter&query=flitter):
+
+```bash
+nix-shell -p flitter
+```
+
 ## Usage
 
 To get started, download and rename the template file [`examples/splits_minimal.json`](/examples/splits_minimal.json) to a path of your choosing. Edit the file (`title`, `category`, `split_names`) to represent your current run.
