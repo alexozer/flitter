@@ -20,15 +20,19 @@ static TARGET_FPS: i32 = 60;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 {
-        return Err(anyhow!("Usage: {} <path_to_splits_file>", args[0]));
+    if args.len() < 2 {
+        return Err(anyhow!("Usage: {} <splits_file> [--config <config_file>]", args[0]));
     }
     let path = PathBuf::from(&args[1]);
 
-    let config_path = PathBuf::from(std::env::var("HOME").unwrap())
-        .join(".config")
-        .join("flitter-timer")
-        .join("config.json");
+    let config_path = if let Some(idx) = args.iter().position(|a| a == "--config") {
+        PathBuf::from(args.get(idx + 1).ok_or_else(|| anyhow!("--config requires a path"))?)
+    } else {
+        PathBuf::from(std::env::var("HOME").unwrap())
+            .join(".config")
+            .join("flitter-timer")
+            .join("config.json")
+    };
 
     let mut timer = Timer::new(&path, &config_path)?;
 
