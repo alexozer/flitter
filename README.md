@@ -15,7 +15,7 @@ A LiveSplit-inspired speedrunning split timer for the terminal.
 
 ## Install
 
-Flitter is designed to work on macOS and Linux (X11). Windows is not currently supported.
+Flitter is designed to work on macOS and Linux (X11). Windows and Wayland are not currently supported.
 
 Head over to the [releases](https://github.com/alexozer/flitter/releases) page for precompiled binaries and an installation one-liner.
 
