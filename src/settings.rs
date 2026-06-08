@@ -44,7 +44,7 @@ pub enum ThemeName {
 }
 
 #[derive(Deserialize)]
-#[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct ParsedSettings {
     pub theme: ThemeName,
     pub global_hotkeys: HashMap<String, Action>,
