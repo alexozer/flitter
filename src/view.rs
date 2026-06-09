@@ -79,6 +79,7 @@ pub fn render_view(timer: &TimerState, theme: &Theme) -> Block {
         spacer_block,
         get_prev_segment_block(timer, theme, &summary),
         get_sum_of_best_block(&summary),
+        get_best_possible_time_block(timer, &summary),
     ]);
     Block::vcat(sections)
 }
@@ -259,6 +260,35 @@ fn get_sum_of_best_block(summary: &[SegSummary]) -> Block {
     let label_col = Image::new("Sum of Best Segments", TIMER_WIDTH / 2, TextAlign::Left).build();
     let sob_col = Image::new(&sob_text, TIMER_WIDTH - TIMER_WIDTH / 2, TextAlign::Right).build();
     label_col.horiz(sob_col)
+}
+
+fn get_best_possible_time_block(timer: &TimerState, summary: &[SegSummary]) -> Block {
+    let completed = timer.splits.len();
+
+    // Get current split time (last completed split, or 0 if none)
+    let current_time = if completed == 0 {
+        Some(Duration::from_secs(0))
+    } else {
+        summary[completed - 1].live_split
+    };
+
+    // Check if all future golds exist
+    let future_golds_exist = summary[completed..].iter().all(|seg| seg.gold.is_some());
+
+    let bpt_text = if let (Some(current), true) = (current_time, future_golds_exist) {
+        let future_golds_sum: Duration = summary[completed..]
+            .iter()
+            .map(|seg| seg.gold.unwrap())
+            .sum();
+        let bpt = current + future_golds_sum;
+        format_duration(bpt, 2, Sign::Positive, Prefix::NoneOrMinus)
+    } else {
+        "-".to_string()
+    };
+
+    let label_col = Image::new("Best Possible Time", TIMER_WIDTH / 2, TextAlign::Left).build();
+    let bpt_col = Image::new(&bpt_text, TIMER_WIDTH - TIMER_WIDTH / 2, TextAlign::Right).build();
+    label_col.horiz(bpt_col)
 }
 
 fn hsl_to_color(h: f64, s: f64, l: f64) -> Color {
