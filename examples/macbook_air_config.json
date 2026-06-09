@@ -1,0 +1,13 @@
+{
+  "theme": "Flitter",
+  "global_hotkeys": {
+    "Space": "Split",
+    "U": "UndoSplit",
+    "P": "Pause",
+    "D": "DeleteSplit",
+    "Backspace": "ResetAndSave",
+    "R": "ResetAndDelete"
+  },
+  "draw_background": true
+}
+ 
